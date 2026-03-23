@@ -123,6 +123,9 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <doclint>none</doclint>
+                </configuration>
             </plugin>
 
             <plugin>
@@ -153,6 +156,7 @@
                 <extensions>true</extensions>
                 <configuration>
                     <publishingServerId>central</publishingServerId>
+                    <autoPublish>true</autoPublish>
                 </configuration>
             </plugin>
         </plugins>
