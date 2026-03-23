@@ -8,7 +8,6 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     permissions:
       contents: read
 
@@ -22,27 +21,15 @@ jobs:
           distribution: temurin
           java-version: '8'
           cache: maven
-
-      - name: Import GPG key
-        run: |
-          echo "${{ secrets.GPG_PRIVATE_KEY }}" | gpg --batch --import
-
-      - name: Create Maven settings.xml
-        run: |
-          mkdir -p ~/.m2
-          cat > ~/.m2/settings.xml << 'SETTINGS'
-          <settings>
-            <servers>
-              <server>
-                <id>central</id>
-                <username>${{ secrets.CENTRAL_USERNAME }}</username>
-                <password>${{ secrets.CENTRAL_PASSWORD }}</password>
-              </server>
-            </servers>
-          </settings>
-          SETTINGS
+          server-id: central
+          server-username: CENTRAL_USERNAME
+          server-password: CENTRAL_PASSWORD
+          gpg-private-key: ${{ secrets.GPG_PRIVATE_KEY }}
+          gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
       - name: Publish
         run: mvn -B clean deploy
         env:
+          CENTRAL_USERNAME: ${{ secrets.CENTRAL_USERNAME }}
+          CENTRAL_PASSWORD: ${{ secrets.CENTRAL_PASSWORD }}
           MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
