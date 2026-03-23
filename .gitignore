@@ -1,0 +1,29 @@
+# Build output
+build/
+target/
+out/
+
+# Gradle
+.gradle/
+gradle/
+
+# IDE
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# JS bundle (rebuilt from js-bundle/)
+js-bundle/node_modules/
+
+# Test artifacts
+mermaid-test-*.svg
+mermaid-test-result*.json
+
+# AI context
+.ai/
+

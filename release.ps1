@@ -26,13 +26,6 @@ if (-not (Test-Path 'pom.xml')) {
     Write-Error "pom.xml not found. Run this script from the repository root."
 }
 
-$status = git status --porcelain
-if ($status) {
-    Write-Warning "Working tree has uncommitted changes:`n$status"
-    $answer = Read-Host "Continue anyway? (y/N)"
-    if ($answer -ne 'y') { exit 1 }
-}
-
 $existingTag = git tag -l $tag
 if ($existingTag) {
     Write-Error "Tag $tag already exists. Choose a different version."
@@ -51,10 +44,15 @@ $readme = $readme -replace '(<version>)[^<]+(</version>)', "`${1}$Version`${2}"
 $readme = $readme -replace "(implementation\s+'com\.aresstack:mermaid-java:)[^']+'", "`${1}$Version'"
 [System.IO.File]::WriteAllText("$PWD\README.md", $readme, [System.Text.UTF8Encoding]::new($false))
 
-# --- Commit ---
+# --- Commit (only if there are changes) ---
 Write-Host "[3/5] Committing ..." -ForegroundColor Cyan
 git add pom.xml README.md
-git commit -m "release $Version"
+$diff = git diff --cached --name-only
+if ($diff) {
+    git commit -m "release $Version"
+} else {
+    Write-Host "       pom.xml and README.md already at $Version — skipping commit." -ForegroundColor Yellow
+}
 
 # --- Tag ---
 Write-Host "[4/5] Creating tag $tag ..." -ForegroundColor Cyan

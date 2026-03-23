@@ -164,4 +164,12 @@ mvn clean package
 
 ## License
 
-[MIT](LICENSE)
+This project is licensed under the [MIT License](LICENSE).
+
+### Bundled third-party software
+
+This JAR includes a bundled copy of [Mermaid.js](https://github.com/mermaid-js/mermaid)
+(v11.4.1), which is licensed separately under the **MIT License**,
+Copyright © Knut Sveidqvist.
+See the [Mermaid license](https://github.com/mermaid-js/mermaid/blob/develop/LICENSE)
+for details.
