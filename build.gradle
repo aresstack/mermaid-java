@@ -35,6 +35,6 @@ test {
 }
 
 application {
-    mainClassName = 'de.bund.zrb.mermaid.MermaidRendererMain'
+    mainClassName = 'com.aresstack.mermaid.MermaidRendererMain'
 }
 
