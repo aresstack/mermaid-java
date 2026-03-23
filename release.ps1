@@ -32,17 +32,29 @@ if ($existingTag) {
 }
 
 # --- Update version in pom.xml ---
-Write-Host "[1/5] Updating pom.xml to $Version ..." -ForegroundColor Cyan
-$pom = Get-Content pom.xml -Raw -Encoding UTF8
-$pom = $pom -replace '<version>[^<]+</version>([\s\S]*?<packaging>)', "<version>$Version</version>`$1"
-[System.IO.File]::WriteAllText("$PWD\pom.xml", $pom, [System.Text.UTF8Encoding]::new($false))
+Write-Host "[1/5] Updating pom.xml ..." -ForegroundColor Cyan
+$pomBytes  = [System.IO.File]::ReadAllBytes("$PWD\pom.xml")
+$pomText   = [System.Text.Encoding]::UTF8.GetString($pomBytes)
+$pomNew    = $pomText -replace '(<version>)[^<]+(</version>([\s\S]*?)<packaging>)', "`${1}$Version`${2}"
+if ($pomNew -ne $pomText) {
+    [System.IO.File]::WriteAllBytes("$PWD\pom.xml", [System.Text.Encoding]::UTF8.GetBytes($pomNew))
+    Write-Host "       pom.xml -> $Version" -ForegroundColor Green
+} else {
+    Write-Host "       pom.xml already at $Version" -ForegroundColor Yellow
+}
 
 # --- Update version in README.md ---
 Write-Host "[2/5] Updating README.md ..." -ForegroundColor Cyan
-$readme = Get-Content README.md -Raw -Encoding UTF8
-$readme = $readme -replace '(<version>)[^<]+(</version>)', "`${1}$Version`${2}"
-$readme = $readme -replace "(implementation\s+'com\.aresstack:mermaid-java:)[^']+'", "`${1}$Version'"
-[System.IO.File]::WriteAllText("$PWD\README.md", $readme, [System.Text.UTF8Encoding]::new($false))
+$readmeBytes = [System.IO.File]::ReadAllBytes("$PWD\README.md")
+$readmeText  = [System.Text.Encoding]::UTF8.GetString($readmeBytes)
+$readmeNew   = $readmeText -replace '(<version>)[^<]+(</version>)', "`${1}$Version`${2}"
+$readmeNew   = $readmeNew  -replace "(implementation\s+'com\.aresstack:mermaid-java:)[^']+'", "`${1}$Version'"
+if ($readmeNew -ne $readmeText) {
+    [System.IO.File]::WriteAllBytes("$PWD\README.md", [System.Text.Encoding]::UTF8.GetBytes($readmeNew))
+    Write-Host "       README.md -> $Version" -ForegroundColor Green
+} else {
+    Write-Host "       README.md already at $Version" -ForegroundColor Yellow
+}
 
 # --- Commit (only if there are changes) ---
 Write-Host "[3/5] Committing ..." -ForegroundColor Cyan
@@ -51,7 +63,7 @@ $diff = git diff --cached --name-only
 if ($diff) {
     git commit -m "release $Version"
 } else {
-    Write-Host "       pom.xml and README.md already at $Version — skipping commit." -ForegroundColor Yellow
+    Write-Host "       No changes — skipping commit." -ForegroundColor Yellow
 }
 
 # --- Tag ---
