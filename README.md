@@ -23,6 +23,8 @@ implementation 'com.aresstack:mermaid-java:0.1.0-beta.1'
 
 ## Quick Start
 
+No external files or Node.js required — the Mermaid JS engine is bundled inside the JAR.
+
 ```java
 import com.aresstack.Mermaid;
 
