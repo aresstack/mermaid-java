@@ -1,7 +1,7 @@
 # mermaid-java
 
-Renders [Mermaid](https://mermaid.js.org/) diagram code to SVG in **pure Java** — no browser, no Node.js, no native dependencies.  
-Internally uses GraalJS to execute the official Mermaid library and Apache Batik for accurate SVG text measurement.
+Renders [Mermaid](https://mermaid.js.org/) diagram code to SVG or `BufferedImage` in **pure Java** — no browser, no Node.js, no native dependencies.  
+Internally uses GraalJS to execute the official Mermaid library and Apache Batik for accurate SVG text measurement and rasterisation.
 
 ## Installation
 
@@ -26,26 +26,62 @@ implementation 'com.aresstack:mermaid-java:0.1.0'
 ```java
 import com.aresstack.mermaid.Mermaid;
 
-// One-liner — renders to SVG with all post-processing applied:
+// One-liner — get a ready-to-use SVG string:
 String svg = Mermaid.render("graph TD; A-->B;");
+
+// Or get a BufferedImage directly:
+BufferedImage img = Mermaid.renderToImage("graph TD; A-->B;");
 ```
 
-That's it. The returned `String` is a self-contained SVG document ready to be
-written to a file, embedded in HTML, or rasterised with Batik / ImageIO.
-
-### Raw SVG (no Batik fixes)
-
-If you don't need the Batik-compatibility post-processing:
+### Save as PNG
 
 ```java
-String rawSvg = Mermaid.renderRaw("graph TD; A-->B;");
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
+
+BufferedImage img = Mermaid.renderToImage("graph TD; A-->B;");
+ImageIO.write(img, "png", new File("diagram.png"));
+```
+
+### Control the output width (zoom / hi-DPI / thumbnails)
+
+```java
+// High-resolution render (4K width):
+BufferedImage hi = Mermaid.renderToImage("graph TD; A-->B;", 3840);
+
+// Thumbnail:
+BufferedImage thumb = Mermaid.renderToImage("graph TD; A-->B;", 300);
+```
+
+### Re-rasterise an existing SVG at a different size
+
+If you already have an SVG string and need multiple resolutions:
+
+```java
+String svg = Mermaid.render("graph TD; A-->B;");
+
+BufferedImage normal = Mermaid.svgToImage(svg);       // intrinsic size
+BufferedImage large  = Mermaid.svgToImage(svg, 2400);  // exact width
+BufferedImage small  = Mermaid.svgToImage(svg, 400);   // thumbnail
+```
+
+### Embed in Swing
+
+```java
+BufferedImage img = Mermaid.renderToImage("graph TD; A-->B;");
+JLabel label = new JLabel(new ImageIcon(img));
+```
+
+### Embed in JavaFX
+
+```java
+BufferedImage img = Mermaid.renderToImage("graph TD; A-->B;");
+ImageView view = new ImageView(SwingFXUtils.toFXImage(img, null));
 ```
 
 ### Error handling
 
 ```java
-import com.aresstack.mermaid.JsExecutionResult;
-
 JsExecutionResult result = Mermaid.renderDetailed("graph TD; A-->B;");
 if (result.isSuccessful()) {
     String svg = result.getOutput();
@@ -54,18 +90,18 @@ if (result.isSuccessful()) {
 }
 ```
 
-### Lower-level API
+## API Overview
 
-The `Mermaid` facade delegates to two classes that you can also use directly:
-
-```java
-import com.aresstack.mermaid.MermaidRenderer;
-import com.aresstack.mermaid.MermaidSvgFixup;
-
-MermaidRenderer renderer = MermaidRenderer.getInstance();
-String svg = renderer.renderToSvg("graph TD; A-->B;");
-svg = MermaidSvgFixup.fixForBatik(svg);
-```
+| Method | Returns | Description |
+|--------|---------|-------------|
+| `Mermaid.render(code)` | `String` | SVG with all Batik-compatibility fixes |
+| `Mermaid.renderRaw(code)` | `String` | SVG without post-processing |
+| `Mermaid.renderToImage(code)` | `BufferedImage` | Rasterised image at intrinsic size, auto-cropped |
+| `Mermaid.renderToImage(code, width)` | `BufferedImage` | Rasterised at exact pixel width |
+| `Mermaid.svgToImage(svg)` | `BufferedImage` | Convert existing SVG string → image |
+| `Mermaid.svgToImage(svg, width)` | `BufferedImage` | Convert existing SVG → image at exact width |
+| `Mermaid.autoCrop(image)` | `BufferedImage` | Trim transparent/white edges |
+| `Mermaid.renderDetailed(code)` | `JsExecutionResult` | SVG or error details |
 
 ## Supported Diagram Types
 
@@ -107,25 +143,12 @@ Output: `src/main/resources/mermaid/mermaid.min.js`
 
 | Class | Purpose |
 |-------|---------|
-| `Mermaid` | **Public API** — static one-liner `render()` / `renderRaw()` / `renderDetailed()` |
+| `Mermaid` | **Public API** — `render()` / `renderToImage()` / `svgToImage()` |
 | `MermaidRenderer` | Singleton — GraalJS context management, Mermaid initialisation |
 | `MermaidSvgFixup` | Post-processing: Batik-compatibility DOM fixes |
 | `GraalJsExecutor` | Internal GraalJS polyglot-context wrapper |
-| `GraalJsExecutor.JavaBridge` | Java↔JS bridge: text measurement (Java2D) + BBox (Batik) |
 | `BatikBBoxService` | Exact SVG BBox computation via Batik GVT tree |
 | `JsExecutionResult` | Immutable result object (success / failure) |
-
-### BatikBBoxService — Accurate `getBBox()`
-
-Mermaid relies on `getBBox()` for layout calculations. The headless browser shim
-delegates to `BatikBBoxService` for `<text>` elements, which parses the SVG fragment
-through Batik's GVT tree and returns pixel-accurate bounding boxes using Java2D fonts.
-
-### MermaidSvgFixup — Batik Compatibility
-
-Mermaid emits browser-centric SVG. `MermaidSvgFixup.fixForBatik()` applies 16+ DOM-level
-fixes (marker relocation, z-order, lifeline extension, hsl→hex conversion, …) so the output
-renders correctly in Apache Batik and other strict SVG rasterisers.
 
 ## Building
 
