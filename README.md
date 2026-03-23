@@ -11,14 +11,14 @@ Internally uses GraalJS to execute the official Mermaid library and Apache Batik
 <dependency>
     <groupId>com.aresstack</groupId>
     <artifactId>mermaid-java</artifactId>
-    <version>0.1.0</version>
+    <version>0.1.0-beta.1</version>
 </dependency>
 ```
 
 ### Gradle
 
 ```groovy
-implementation 'com.aresstack:mermaid-java:0.1.0'
+implementation 'com.aresstack:mermaid-java:0.1.0-beta.1'
 ```
 
 ## Quick Start
