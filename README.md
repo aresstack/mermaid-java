@@ -24,7 +24,7 @@ implementation 'com.aresstack:mermaid-java:0.1.0'
 ## Quick Start
 
 ```java
-import com.aresstack.mermaid.Mermaid;
+import com.aresstack.Mermaid;
 
 // One-liner — get a ready-to-use SVG string:
 String svg = Mermaid.render("graph TD; A-->B;");

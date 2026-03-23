@@ -1,5 +1,8 @@
-package com.aresstack.mermaid;
+package com.aresstack;
 
+import com.aresstack.mermaid.JsExecutionResult;
+import com.aresstack.mermaid.MermaidRenderer;
+import com.aresstack.mermaid.MermaidSvgFixup;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.ImageTranscoder;
@@ -14,6 +17,8 @@ import java.util.logging.Logger;
  *
  * <h3>Quick start</h3>
  * <pre>
+ *   import com.aresstack.Mermaid;
+ *
  *   // SVG string:
  *   String svg = Mermaid.render("graph TD; A--&gt;B;");
  *
@@ -274,3 +279,4 @@ public final class Mermaid {
         }
     }
 }
+
