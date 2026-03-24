@@ -3,6 +3,8 @@ package com.aresstack;
 import com.aresstack.mermaid.JsExecutionResult;
 import com.aresstack.mermaid.MermaidRenderer;
 import com.aresstack.mermaid.MermaidSvgFixup;
+import com.aresstack.mermaid.layout.DiagramLayoutExtractor;
+import com.aresstack.mermaid.layout.RenderedDiagram;
 import org.apache.batik.transcoder.TranscoderInput;
 import org.apache.batik.transcoder.TranscoderOutput;
 import org.apache.batik.transcoder.image.ImageTranscoder;
@@ -24,6 +26,11 @@ import java.util.logging.Logger;
  *
  *   // BufferedImage (ready for Swing, JavaFX, ImageIO.write, …):
  *   BufferedImage img = Mermaid.renderToImage("graph TD; A--&gt;B;");
+ *
+ *   // SVG + layout metadata (node positions, edge geometry):
+ *   RenderedDiagram diagram = Mermaid.renderWithLayout("graph TD; A--&gt;B;");
+ *   DiagramNode nodeA = diagram.findNodeById("A");
+ *   DiagramNode clicked = diagram.findNodeAt(x, y);
  * </pre>
  *
  * <p>All methods are thread-safe; the underlying GraalJS engine and Mermaid
@@ -80,6 +87,50 @@ public final class Mermaid {
      */
     public static JsExecutionResult renderDetailed(String diagramCode) {
         return MermaidRenderer.getInstance().renderToSvgDetailed(diagramCode);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  SVG + Layout metadata output
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Render a Mermaid diagram and extract layout metadata for every node
+     * and edge.  Returns a {@link RenderedDiagram} containing:
+     * <ul>
+     *   <li>The fully processed SVG string</li>
+     *   <li>A list of {@link com.aresstack.mermaid.layout.DiagramNode}s
+     *       with id, label, kind, and bounding box</li>
+     *   <li>A list of {@link com.aresstack.mermaid.layout.DiagramEdge}s
+     *       with source/target ids, label, and path data</li>
+     *   <li>The detected diagram type</li>
+     *   <li>The SVG viewBox dimensions</li>
+     * </ul>
+     *
+     * <h3>Example</h3>
+     * <pre>
+     *   RenderedDiagram diagram = Mermaid.renderWithLayout("graph TD; A--&gt;B;");
+     *   String svg = diagram.getSvg();
+     *
+     *   for (DiagramNode node : diagram.getNodes()) {
+     *       System.out.println(node.getId() + " at " + node.getX() + "," + node.getY());
+     *   }
+     *
+     *   // Hit-test: which node was clicked?
+     *   DiagramNode clicked = diagram.findNodeAt(mouseX, mouseY);
+     *
+     *   // Find all edges connected to a node:
+     *   List&lt;DiagramEdge&gt; edges = diagram.findEdgesFor("A");
+     * </pre>
+     *
+     * @param diagramCode Mermaid definition, e.g. {@code "graph TD; A-->B;"}
+     * @return rendered diagram with layout metadata, or {@code null} if rendering failed
+     */
+    public static RenderedDiagram renderWithLayout(String diagramCode) {
+        String svg = render(diagramCode);
+        if (svg == null) {
+            return null;
+        }
+        return DiagramLayoutExtractor.extract(svg);
     }
 
     // ═══════════════════════════════════════════════════════════
@@ -279,4 +330,3 @@ public final class Mermaid {
         }
     }
 }
-
