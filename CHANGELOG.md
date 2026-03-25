@@ -1,40 +1,60 @@
 # Changelog
 
-All notable changes to the **mermaid-java** library are documented in this file.
+All notable changes to **mermaid-java** will be documented in this file.
 
-## [0.2.0-beta.2] — 2025-03-25
+The format is based on [Keep a Changelog](https://keepachangelog.com/), and this project adheres to [Semantic Versioning](https://semver.org/).
 
-### Fixed
-- **Intl polyfill for GraalJS**: Added comprehensive `Intl` polyfill to `browser-shim.js` resolving `ReferenceError: Intl is not defined` when Mermaid 11+ calls `Intl.Segmenter` in `SplitTextToChars()`.
-  - `Intl.Segmenter` — splits text by code points with proper surrogate-pair handling, returns an iterable result with `Symbol.iterator`.
-  - `Intl.NumberFormat`, `Intl.DateTimeFormat`, `Intl.Collator` — minimal stubs for chart/axis label rendering.
-  - `window.Intl = Intl` — ensures global availability in the GraalJS polyglot context.
+---
 
-## [0.2.0-beta.1] — 2025-03-24
-
-### Added
-- **Layout extraction API** (`DiagramLayoutExtractor`): Parses rendered SVG to extract node/edge positions, shapes, and bounding boxes into a structured `RenderedDiagram` model.
-- **Polymorphic node types**: `FlowchartNode`, `ClassNode`, `ErEntityNode`, `SequenceActorNode`, `StateNode`, `MindmapNode` — each with type-specific properties (shape, stereotypes, attributes, cardinality, etc.).
-- **ANTLR 4.9.3 grammars** for 5 Mermaid diagram types:
-  - `MermaidFlowchart.g4` — flowchart / graph
-  - `MermaidClassDiagram.g4` — class diagrams (members, stereotypes, relationships)
-  - `MermaidErDiagram.g4` — ER diagrams (entities, attributes, relationships with cardinality)
-  - `MermaidSequenceDiagram.g4` — sequence diagrams (participants, messages, loops, alt)
-  - `MermaidStateDiagram.g4` — state diagrams (states, transitions, notes)
-- **`SourceEditBridge`** — AST-based roundtrip editing: rename nodes, change edge labels, add/delete/reverse edges, reconnect edge endpoints, add/remove class members. Changes are applied to the Mermaid source text with precise line targeting.
-- **`MermaidSvgFixup`** — post-processing for Batik compatibility: strips unsupported CSS properties (`dominant-baseline`, `alignment-baseline`), fixes `<foreignObject>` text alignment, and corrects ER-diagram label visibility.
+## [0.2.0-beta.2] — 2026-03-25
 
 ### Fixed
-- **ANTLR compilation in Maven**: Grammar files are now correctly compiled from `src/main/antlr4/` during the `generate-sources` phase.
-- **Grammar package path**: Generated parsers are placed in `com.aresstack.mermaid.parser.*` to match the project's package structure.
-- **ER diagram edge bounding boxes**: Edge `containsApprox()` hit-testing now works correctly for ER relationship lines.
 
-## [0.1.0-beta.1] — 2025-03-22
+- **Intl polyfill for GraalJS** — Mermaid 11+ uses `Intl.Segmenter` in `SplitTextToChars()` for grapheme-cluster text splitting. GraalJS does not provide the `Intl` API by default, causing `ReferenceError: Intl is not defined` at render time. Added a minimal polyfill to `browser-shim.js`:
+  - `Intl.Segmenter` — splits by code points with surrogate-pair handling
+  - `Intl.NumberFormat` — formats numbers via `String()`
+  - `Intl.DateTimeFormat` — formats dates via `toISOString()`
+  - `Intl.Collator` — compares strings via `<` / `>` operators
+- **ANTLR grammar path** — moved grammars to Maven-convention path (`src/main/antlr4/<package>/`) so the ANTLR4 Maven plugin places generated Java files in the correct package directory
+- **Maven build** — added `antlr4-maven-plugin` 4.9.3 + `antlr4-runtime` 4.9.3 to `pom.xml` for CI/CD pipeline compatibility
+
+## [0.2.0-beta.1] — 2026-03-24
 
 ### Added
-- Initial release: Pure-Java Mermaid-to-SVG rendering using GraalJS + Apache Batik.
-- `MermaidRenderer` — singleton engine that evaluates `mermaid.min.js` in a GraalJS polyglot context and renders diagrams to SVG strings.
-- `browser-shim.js` — comprehensive browser environment polyfill for GraalJS (DOM stubs, `DOMParser`, `XMLSerializer`, `requestAnimationFrame`, `MutationObserver`, `ResizeObserver`, `CSS.supports`, `matchMedia`, etc.).
-- `SvgRenderer` — Batik-based rasterization of SVG to `BufferedImage` with configurable size hints.
-- Support for all major Mermaid diagram types: flowchart, sequence, class, ER, state, mindmap, Gantt, pie, and more.
 
+- **Layout Extraction** — `DiagramLayoutExtractor` extracts typed node/edge models from rendered SVG
+- **`RenderedDiagram`** — immutable container with hit-testing (`findNodeAt`, `findNodeById`, `findEdgesFor`)
+- **Polymorphic node types**: `FlowchartNode`, `ClassNode`, `ErEntityNode`, `StateDiagramNode`, `SequenceActorNode`, `SequenceFragment`, `MindmapItemNode`, `RequirementItemNode`
+- **Polymorphic edge types**: `FlowchartEdge`, `ClassRelation`, `ErRelationship`, `SequenceMessage`, `StateTransition`
+- **`MermaidSourceEditor`** — ANTLR-based roundtrip editing with `TokenStreamRewriter`
+- **`SourceEditBridge`** — high-level API for: `renameNode`, `reverseEdge`, `deleteEdge`, `addEdge`, `reconnectEdge`, `changeErCardinality`
+- **6 ANTLR grammars** — flowchart, ER, sequence, state, class (all Java 8–compatible with ANTLR 4.9.3)
+- **Edge endpoint drag-and-drop** — direct grab-and-drag reconnection using SVG path endpoints
+- **ER cardinality editing** — with label preservation from ANTLR model
+- **`Mermaid.renderWithLayout(code)`** — new façade method returning `RenderedDiagram` (SVG + nodes + edges)
+
+### Fixed
+
+- **ER SVG extraction** — use actual path endpoints instead of bounding-box midpoints
+- **ER relationship labels** — always preserve label (Mermaid ER requires `: label`)
+- **`reconnectEdge`** — use `findEdgeRobust` + strip SVG prefixes from node IDs
+
+## [0.1.0-beta.1] — 2026-03-23
+
+### Added
+
+- **SVG Rendering** — render all 20+ Mermaid diagram types to SVG using GraalJS + bundled Mermaid 11.4.1 (ESM → IIFE via esbuild)
+- **Rasterisation** — SVG to `BufferedImage` at any resolution via Apache Batik
+- **Public API**: `Mermaid.render()`, `Mermaid.renderRaw()`, `Mermaid.renderToImage()`, `Mermaid.svgToImage()`, `Mermaid.autoCrop()`
+- **`MermaidSvgFixup`** — Batik-compatibility DOM post-processing (lifeline fixes, label repositioning, `href` → `xlink:href`, multi-line box expansion)
+- **`BatikBBoxService`** — exact SVG BBox computation via Batik GVT tree
+- **`GraalJsExecutor`** — internal GraalJS polyglot-context wrapper
+- **`browser-shim.js`** — DOM/CSS polyfills for headless GraalJS (document, window, navigator, getComputedStyle, etc.)
+- **esbuild bundler** — `js-bundle/` for building Mermaid IIFE bundle from npm
+- Java 8 compatible
+
+---
+
+[0.2.0-beta.2]: https://github.com/aresstack/mermaid-java/compare/v0.2.0-beta.1...v0.2.0-beta.2
+[0.2.0-beta.1]: https://github.com/aresstack/mermaid-java/compare/v0.1.0-beta.1...v0.2.0-beta.1
+[0.1.0-beta.1]: https://github.com/aresstack/mermaid-java/releases/tag/v0.1.0-beta.1
