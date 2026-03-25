@@ -5,11 +5,11 @@
 
     <groupId>com.aresstack</groupId>
     <artifactId>mermaid-java</artifactId>
-    <version>0.1.0-beta.1</version>
+    <version>0.2.0-beta.1</version>
     <packaging>jar</packaging>
 
     <name>mermaid-java</name>
-    <description>Plain Java Mermaid parser and SVG renderer</description>
+    <description>Plain Java Mermaid parser and SVG renderer with layout extraction and roundtrip source editing</description>
     <url>https://github.com/aresstack/mermaid-java</url>
 
     <licenses>
@@ -37,10 +37,18 @@
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <antlr4.version>4.9.3</antlr4.version>
         <gpg.passphrase>${env.MAVEN_GPG_PASSPHRASE}</gpg.passphrase>
     </properties>
 
     <dependencies>
+        <!-- ANTLR4 runtime — required for generated parsers -->
+        <dependency>
+            <groupId>org.antlr</groupId>
+            <artifactId>antlr4-runtime</artifactId>
+            <version>${antlr4.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.graalvm.sdk</groupId>
             <artifactId>graal-sdk</artifactId>
@@ -85,6 +93,30 @@
 
     <build>
         <plugins>
+            <!-- ANTLR4 — compile .g4 grammars to Java parser/lexer classes -->
+            <plugin>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr4-maven-plugin</artifactId>
+                <version>${antlr4.version}</version>
+                <configuration>
+                    <sourceDirectory>${basedir}/src/main/antlr</sourceDirectory>
+                    <outputDirectory>${project.build.directory}/generated-sources/antlr4/com/aresstack/mermaid/parser</outputDirectory>
+                    <arguments>
+                        <argument>-package</argument>
+                        <argument>com.aresstack.mermaid.parser</argument>
+                    </arguments>
+                    <visitor>true</visitor>
+                    <listener>true</listener>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>antlr4</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
