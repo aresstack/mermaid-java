@@ -99,8 +99,9 @@
                 <artifactId>antlr4-maven-plugin</artifactId>
                 <version>${antlr4.version}</version>
                 <configuration>
-                    <sourceDirectory>${basedir}/src/main/antlr</sourceDirectory>
-                    <outputDirectory>${project.build.directory}/generated-sources/antlr4/com/aresstack/mermaid/parser</outputDirectory>
+                    <!-- Grammars at src/main/antlr4/com/aresstack/mermaid/parser/*.g4
+                         Plugin mirrors directory structure to outputDirectory,
+                         so generated Java files land in the correct package path. -->
                     <arguments>
                         <argument>-package</argument>
                         <argument>com.aresstack.mermaid.parser</argument>

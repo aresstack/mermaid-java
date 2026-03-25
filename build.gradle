@@ -26,11 +26,17 @@ dependencies {
 }
 // ANTLR configuration - generate parser into the mermaid parser package
 generateGrammarSource {
-    arguments += ['-visitor', '-listener', '-package', 'com.aresstack.mermaid.parser']
+    // Grammars live in Maven-convention path: src/main/antlr4/com/aresstack/mermaid/parser/
+    // We need -lib so tokenVocab (MermaidFlowchartParser→MermaidFlowchartLexer) resolves correctly
+    arguments += ['-visitor', '-listener', '-package', 'com.aresstack.mermaid.parser',
+                  '-lib', file("src/main/antlr4/com/aresstack/mermaid/parser").absolutePath]
     outputDirectory = file("${project.buildDir}/generated-src/antlr/main/com/aresstack/mermaid/parser")
 }
 sourceSets {
     main {
+        antlr {
+            srcDirs = ["src/main/antlr4/com/aresstack/mermaid/parser"]
+        }
         java {
             srcDir "${project.buildDir}/generated-src/antlr/main"
         }
