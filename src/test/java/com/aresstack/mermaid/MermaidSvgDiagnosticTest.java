@@ -13,13 +13,15 @@ import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.StringReader;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
  * Diagnostic test: renders Mermaid diagrams to SVG and validates the raw XML.
- * NO Batik, NO Swing — purely checks if Mermaid 11 + GraalJS produces valid SVG XML.
+ * NO Batik, NO Swing â€” purely checks if Mermaid 11 + GraalJS produces valid SVG XML.
  * <p>
  * Each test case:
  * 1. Renders via {@link MermaidRenderer}
@@ -50,7 +52,7 @@ class MermaidSvgDiagnosticTest {
         xmlParser = dbf.newDocumentBuilder();
     }
 
-    // ── Test Cases ───────────────────────────────────────────────────────────
+    // â”€â”€ Test Cases â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @Timeout(value = 180, unit = TimeUnit.SECONDS)
@@ -122,7 +124,7 @@ class MermaidSvgDiagnosticTest {
 
     @Test
     @Timeout(value = 180, unit = TimeUnit.SECONDS)
-    @DisplayName("TC7: Gantt Chart (known limitation — needs full DOM layout)")
+    @DisplayName("TC7: Gantt Chart (known limitation â€” needs full DOM layout)")
     void tc7_gantt() {
         tryRenderWithDiagnostics("tc7_gantt",
                 "gantt\n"
@@ -136,7 +138,7 @@ class MermaidSvgDiagnosticTest {
                 + "    Frontend  :2024-01-15, 10d");
     }
 
-    // ── Core validation logic ────────────────────────────────────────────────
+    // â”€â”€ Core validation logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @Timeout(value = 180, unit = TimeUnit.SECONDS)
@@ -244,9 +246,9 @@ class MermaidSvgDiagnosticTest {
      * Used for known-limitation diagram types to capture error details.
      */
     private void tryRenderWithDiagnostics(String name, String diagramCode) {
-        System.out.println("\n════════════════════════════════════════════════════════════");
+        System.out.println("\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
         System.out.println("  " + name + " (known limitation diagnostic)");
-        System.out.println("════════════════════════════════════════════════════════════");
+        System.out.println("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
 
         JsExecutionResult detailed = renderer.renderToSvgDetailed(diagramCode);
         if (!detailed.isSuccessful()) {
@@ -278,9 +280,9 @@ class MermaidSvgDiagnosticTest {
     }
 
     private void renderAndValidate(String name, String diagramCode) {
-        System.out.println("\n════════════════════════════════════════════════════════════");
+        System.out.println("\nâ•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
         System.out.println("  " + name);
-        System.out.println("════════════════════════════════════════════════════════════");
+        System.out.println("â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•");
 
         // Step 1: Render
         System.out.println("[1] Rendering via MermaidRenderer...");
@@ -323,9 +325,9 @@ class MermaidSvgDiagnosticTest {
         // Step 3: Try XML parsing on raw SVG
         String rawXmlError = tryXmlParse(rawSvg);
         if (rawXmlError == null) {
-            System.out.println("[3] ✅ Raw SVG is valid XML");
+            System.out.println("[3] âœ… Raw SVG is valid XML");
         } else {
-            System.out.println("[3] ❌ Raw SVG is NOT valid XML: " + rawXmlError);
+            System.out.println("[3] âŒ Raw SVG is NOT valid XML: " + rawXmlError);
         }
 
         // Step 4: Apply postProcessSvg
@@ -337,9 +339,9 @@ class MermaidSvgDiagnosticTest {
 
         String postXmlError = tryXmlParse(processed);
         if (postXmlError == null) {
-            System.out.println("[4] ✅ Post-processed SVG is valid XML");
+            System.out.println("[4] âœ… Post-processed SVG is valid XML");
         } else {
-            System.out.println("[4] ❌ Post-processed SVG is NOT valid XML: " + postXmlError);
+            System.out.println("[4] âŒ Post-processed SVG is NOT valid XML: " + postXmlError);
             System.out.println("[4] Post-proc head: " + processed.substring(0, Math.min(500, processed.length())));
             System.out.println("[4] Post-proc tail: " + processed.substring(Math.max(0, processed.length() - 500)));
         }
@@ -353,9 +355,9 @@ class MermaidSvgDiagnosticTest {
 
         String fixedXmlError = tryXmlParse(fixed);
         if (fixedXmlError == null) {
-            System.out.println("[5] ✅ Fixed SVG is valid XML");
+            System.out.println("[5] âœ… Fixed SVG is valid XML");
         } else {
-            System.out.println("[5] ❌ Fixed SVG is NOT valid XML: " + fixedXmlError);
+            System.out.println("[5] âŒ Fixed SVG is NOT valid XML: " + fixedXmlError);
             System.out.println("[5] Fixed head: " + fixed.substring(0, Math.min(500, fixed.length())));
             System.out.println("[5] Fixed tail: " + fixed.substring(Math.max(0, fixed.length() - 500)));
         }
@@ -363,12 +365,12 @@ class MermaidSvgDiagnosticTest {
         // Step 6: Check for problematic attributes
         checkForProblems(name, fixed);
 
-        // Step 7: Final assertion — at least the fixed SVG should be valid XML
-        System.out.println("────────────────────────────────────────────────────────────");
+        // Step 7: Final assertion â€” at least the fixed SVG should be valid XML
+        System.out.println("â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€");
         if (fixedXmlError != null) {
-            System.out.println("RESULT: " + name + " FAILED — fixed SVG still not valid XML");
+            System.out.println("RESULT: " + name + " FAILED â€” fixed SVG still not valid XML");
         } else {
-            System.out.println("RESULT: " + name + " PASSED — valid XML SVG produced");
+            System.out.println("RESULT: " + name + " PASSED â€” valid XML SVG produced");
         }
         assertNull(fixedXmlError, name + ": fixed SVG should be valid XML but got: " + fixedXmlError);
     }
@@ -394,12 +396,12 @@ class MermaidSvgDiagnosticTest {
         boolean hasHtmlTags = svg.contains("<div") || svg.contains("<span") || svg.contains("<body");
 
         System.out.println("[6] Problem check:");
-        System.out.println("    alignment-baseline : " + (hasAlignmentBaseline ? "❌ PRESENT" : "✅ clean"));
-        System.out.println("    foreignObject      : " + (hasForeignObject ? "⚠️ PRESENT" : "✅ clean"));
-        System.out.println("    currentColor       : " + (hasCurrentColor ? "⚠️ present (minor)" : "✅ clean"));
-        System.out.println("    CSS var(--)        : " + (hasCssVariables ? "⚠️ present" : "✅ clean"));
-        System.out.println("    xhtml namespace    : " + (hasXhtmlNs ? "❌ PRESENT" : "✅ clean"));
-        System.out.println("    HTML tags in SVG   : " + (hasHtmlTags ? "❌ PRESENT" : "✅ clean"));
+        System.out.println("    alignment-baseline : " + (hasAlignmentBaseline ? "âŒ PRESENT" : "âœ… clean"));
+        System.out.println("    foreignObject      : " + (hasForeignObject ? "âš ï¸ PRESENT" : "âœ… clean"));
+        System.out.println("    currentColor       : " + (hasCurrentColor ? "âš ï¸ present (minor)" : "âœ… clean"));
+        System.out.println("    CSS var(--)        : " + (hasCssVariables ? "âš ï¸ present" : "âœ… clean"));
+        System.out.println("    xhtml namespace    : " + (hasXhtmlNs ? "âŒ PRESENT" : "âœ… clean"));
+        System.out.println("    HTML tags in SVG   : " + (hasHtmlTags ? "âŒ PRESENT" : "âœ… clean"));
     }
 
     private void saveTo(String filename, String content) {
@@ -412,4 +414,5 @@ class MermaidSvgDiagnosticTest {
         }
     }
 }
+
 

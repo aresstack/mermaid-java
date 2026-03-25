@@ -1,7 +1,12 @@
 package com.aresstack.mermaid;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
 /**
- * Standalone entry point — renders a sample Mermaid diagram and prints the SVG.
+ * Standalone entry point â€” renders a sample Mermaid diagram and prints the SVG.
  * <p>
  * Run via: {@code gradlew :mermaid-renderer:run}
  */
@@ -42,4 +47,5 @@ public final class MermaidRendererMain {
         }
     }
 }
+
 

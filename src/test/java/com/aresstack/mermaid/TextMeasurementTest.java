@@ -142,7 +142,7 @@ class TextMeasurementTest {
         String shim = MermaidRenderer.loadResource("/mermaid/browser-shim.js");
         assertNotNull(shim);
 
-        // Test text-anchor: start (default) — x should be at the given x position
+        // Test text-anchor: start (default) â€” x should be at the given x position
         String script = shim + "\n"
                 + "var el1 = document.createElement('text');\n"
                 + "el1.textContent = 'Hello';\n"
@@ -150,7 +150,7 @@ class TextMeasurementTest {
                 + "el1.setAttribute('y', '50');\n"
                 + "el1.setAttribute('font-size', '16');\n"
                 + "var bbox1 = el1.getBBox();\n"
-                // Test text-anchor: middle — x should be shifted left by half width
+                // Test text-anchor: middle â€” x should be shifted left by half width
                 + "var el2 = document.createElement('text');\n"
                 + "el2.textContent = 'Hello';\n"
                 + "el2.setAttribute('x', '100');\n"
@@ -158,7 +158,7 @@ class TextMeasurementTest {
                 + "el2.setAttribute('font-size', '16');\n"
                 + "el2.style.setProperty('text-anchor', 'middle');\n"
                 + "var bbox2 = el2.getBBox();\n"
-                // Test text-anchor: end — x should be shifted left by full width
+                // Test text-anchor: end â€” x should be shifted left by full width
                 + "var el3 = document.createElement('text');\n"
                 + "el3.textContent = 'Hello';\n"
                 + "el3.setAttribute('x', '100');\n"
@@ -181,11 +181,11 @@ class TextMeasurementTest {
         double w = Double.parseDouble(output.split("w=")[1].split(" ")[0]);
         double h = Double.parseDouble(output.split("h=")[1].trim());
 
-        // text-anchor:start → bbox.x ≈ 100 (the given x; Batik may add glyph side bearing)
+        // text-anchor:start â†’ bbox.x â‰ˆ 100 (the given x; Batik may add glyph side bearing)
         assertEquals(100.0, startX, 2.0, "start: x should be near given position");
-        // text-anchor:middle → bbox.x ≈ 100 - w/2
+        // text-anchor:middle â†’ bbox.x â‰ˆ 100 - w/2
         assertEquals(100.0 - w / 2, middleX, 2.0, "middle: x should be shifted left by ~w/2");
-        // text-anchor:end → bbox.x ≈ 100 - w
+        // text-anchor:end â†’ bbox.x â‰ˆ 100 - w
         assertEquals(100.0 - w, endX, 2.0, "end: x should be shifted left by ~w");
         // Height should be > 0 and plausible (Batik geometry bounds may be < fontSize)
         assertTrue(h > 5, "Height should be > 5px for visible text, got: " + h);
@@ -219,7 +219,7 @@ class TextMeasurementTest {
         double h24 = Double.parseDouble(output.split("h24=")[1].split(" ")[0]);
 
         // Height should scale approximately linearly with font size
-        // 24px/12px ≈ 2.0 ratio
+        // 24px/12px â‰ˆ 2.0 ratio
         double ratio = h24 / h12;
         assertTrue(ratio > 1.5 && ratio < 2.5,
                 "Height ratio for 24px/12px should be ~2.0, got: " + ratio);
@@ -230,3 +230,4 @@ class TextMeasurementTest {
         assertTrue(h24 > 10, "24px text height should be > 10, got: " + h24);
     }
 }
+

@@ -52,7 +52,7 @@ final class BatikBBoxService {
     /** Maximum number of cached BBox results (LRU eviction). */
     private static final int CACHE_MAX_SIZE = 512;
 
-    /** LRU cache: SVG fragment → "x,y,w,h" result string. */
+    /** LRU cache: SVG fragment â†’ "x,y,w,h" result string. */
     @SuppressWarnings("serial")
     private final Map<String, String> cache = new LinkedHashMap<String, String>(64, 0.75f, true) {
         @Override
@@ -113,9 +113,9 @@ final class BatikBBoxService {
         cache.clear();
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Internal
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private String doComputeBBox(String svgFragment) throws Exception {
         // Sanitize the fragment for Batik compatibility
@@ -211,7 +211,7 @@ final class BatikBBoxService {
     }
 
     private static String formatResult(double x, double y, double w, double h) {
-        // Two decimal places — sufficient for SVG layout
+        // Two decimal places â€” sufficient for SVG layout
         return round2(x) + "," + round2(y) + "," + round2(w) + "," + round2(h);
     }
 
@@ -219,4 +219,5 @@ final class BatikBBoxService {
         return Math.round(v * 100.0) / 100.0;
     }
 }
+
 

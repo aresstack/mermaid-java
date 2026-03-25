@@ -24,13 +24,13 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Advanced visual test tool for Mermaid → SVG → BufferedImage rendering.
+ * Advanced visual test tool for Mermaid â†’ SVG â†’ BufferedImage rendering.
  * <p>
  * Tests diagram types NOT covered by {@link MermaidRenderTest}:
  * Class, State, ER, User Journey, Gantt, Pie, Quadrant, Git Graph,
  * Timeline, Sankey, XY Chart, Block, Packet, Kanban, Architecture.
  * <p>
- * Requires Mermaid ≥ 11.1.0 (bundled: 11.13.0).
+ * Requires Mermaid â‰¥ 11.1.0 (bundled: 11.13.0).
  */
 public final class MermaidRenderTest3 {
 
@@ -38,9 +38,9 @@ public final class MermaidRenderTest3 {
 
     private MermaidRenderTest3() {}
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Image helpers (copied from MermaidRenderTest)
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static BufferedImage autoCrop(BufferedImage src) {
         if (src == null) return null;
@@ -82,9 +82,9 @@ public final class MermaidRenderTest3 {
         return r < 250 || g < 250 || b < 250;
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Data model
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     public static final class TestCaseResult {
         public String id;
@@ -130,19 +130,19 @@ public final class MermaidRenderTest3 {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Test-case catalogue — advanced diagram types
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Test-case catalogue â€” advanced diagram types
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
 
     private static List<DiagramSpec> buildSpecs() {
         List<DiagramSpec> s = new ArrayList<DiagramSpec>();
 
-        // ═══════════════════════════════════════════════════════
-        //  RUNDE 7 — Bisher ungetestete Diagrammtypen
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  RUNDE 7 â€” Bisher ungetestete Diagrammtypen
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        // ── 1. REQUIREMENT DIAGRAM ────────────────────────────
+        // â”€â”€ 1. REQUIREMENT DIAGRAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("requirement-diagram",
                 "1 \u2014 Requirement-Diagramm (Login-System)",
                 "Ein Requirement-Diagramm mit einem Haupt-Requirement \"Benutzeranmeldung\".\n"
@@ -199,7 +199,7 @@ public final class MermaidRenderTest3 {
                         {"labels", "Sind Labels wie \"contains\" oder \"satisfies\" lesbar?"}
                 }));
 
-        // ── 2. C4 DIAGRAM ─────────────────────────────────────
+        // â”€â”€ 2. C4 DIAGRAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("c4-diagram",
                 "2 \u2014 C4-Diagramm (System Context)",
                 "Ein C4-System-Context-Diagramm mit:\n"
@@ -231,7 +231,7 @@ public final class MermaidRenderTest3 {
                         {"labels", "Sind Beziehungsbeschriftungen wie \"nutzt\" oder \"authentifiziert\" lesbar?"}
                 }));
 
-        // ── 3. ZENUML ──────────────────────────────────────────
+        // â”€â”€ 3. ZENUML â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("zenuml",
                 "3 \u2014 ZenUML (Login-Ablauf)",
                 "Ein ZenUML-Sequenzdiagramm f\u00fcr einen Login-Ablauf:\n"
@@ -263,7 +263,7 @@ public final class MermaidRenderTest3 {
                         {"layout", "Ist der Ablauf klar von oben nach unten lesbar?"}
                 }));
 
-        // ── 4. RADAR CHART ────────────────────────────────────
+        // â”€â”€ 4. RADAR CHART â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("radar-chart",
                 "4 \u2014 Radar-Chart (Qualitaetsprofil)",
                 "Ein Radar-Diagramm mit f\u00fcnf Achsen:\n"
@@ -290,7 +290,7 @@ public final class MermaidRenderTest3 {
                         {"radar-shape", "Ist eine typische Radar-/Spinnennetzform erkennbar?"}
                 }));
 
-        // ── 5. TREEMAP ────────────────────────────────────────
+        // â”€â”€ 5. TREEMAP â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("treemap",
                 "5 \u2014 Treemap (Speichernutzung)",
                 "Eine Treemap zur Speichernutzung mit einem Wurzelelement \"System\".\n"
@@ -315,7 +315,7 @@ public final class MermaidRenderTest3 {
                         {"root-visible", "Ist \"System\" als Oberbegriff oder Kontext sichtbar?"}
                 }));
 
-        // ── 6. VENN DIAGRAM ───────────────────────────────────
+        // â”€â”€ 6. VENN DIAGRAM â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         s.add(new DiagramSpec("venn-diagram",
                 "6 \u2014 Venn-Diagramm (Technologien)",
                 "Ein Venn-Diagramm mit drei sich \u00fcberlappenden Mengen:\n"
@@ -344,9 +344,9 @@ public final class MermaidRenderTest3 {
         return s;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  main — render, then show UI
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  main â€” render, then show UI
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     public static void main(String[] args) throws Exception {
         System.err.println("[MermaidRenderTest3] Initialising renderer...");
@@ -403,9 +403,9 @@ public final class MermaidRenderTest3 {
         });
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Swing dialog (identical structure to MermaidRenderTest)
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static void showDialog(final List<RenderedCase> cases) {
         final JFrame frame = new JFrame("Mermaid Render Test 3 \u2014 Missing Diagram Types");
@@ -421,7 +421,7 @@ public final class MermaidRenderTest3 {
             Arrays.fill(questionAnswers[i], "");
         }
 
-        // ── TOP BAR ──
+        // â”€â”€ TOP BAR â”€â”€
         JPanel topBar = new JPanel(new BorderLayout(12, 0));
         topBar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 2, 0, Color.DARK_GRAY),
@@ -465,7 +465,7 @@ public final class MermaidRenderTest3 {
             }
         };
 
-        // ── CENTER: card row ──
+        // â”€â”€ CENTER: card row â”€â”€
         JPanel cardRow = new JPanel();
         cardRow.setLayout(new BoxLayout(cardRow, BoxLayout.X_AXIS));
         cardRow.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -787,7 +787,7 @@ public final class MermaidRenderTest3 {
         hScroll.getVerticalScrollBar().setUnitIncrement(20);
         frame.add(hScroll, BorderLayout.CENTER);
 
-        // ── Submit ──
+        // â”€â”€ Submit â”€â”€
         submitBtn.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) {
                 for (String[] qa : questionAnswers)
@@ -837,7 +837,7 @@ public final class MermaidRenderTest3 {
             }
         });
 
-        // ── Countdown ──
+        // â”€â”€ Countdown â”€â”€
         final int[] remaining = {COUNTDOWN_SECONDS};
         final Timer timer = new Timer(1000, null);
         timer.addActionListener(new ActionListener() {
@@ -890,4 +890,6 @@ public final class MermaidRenderTest3 {
         return String.format("  %02d:%02d  ", m, s);
     }
 }
+
+
 

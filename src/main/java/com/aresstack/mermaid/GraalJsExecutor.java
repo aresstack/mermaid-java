@@ -9,6 +9,7 @@ import org.graalvm.polyglot.HostAccess;
 import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
@@ -33,7 +34,7 @@ final class GraalJsExecutor {
      * Evaluates the given JavaScript source and returns the result.
      *
      * @param script JavaScript source code
-     * @return execution result — either success with the stringified return value, or failure with the exception details
+     * @return execution result â€” either success with the stringified return value, or failure with the exception details
      */
     JsExecutionResult execute(String script) {
         Context context = null;
@@ -182,7 +183,7 @@ final class GraalJsExecutor {
      * Provides services that cannot be implemented in pure JavaScript:
      * <ul>
      *   <li><b>Accurate text measurement</b> via {@code java.awt.FontMetrics}</li>
-     *   <li><b>Accurate SVG bounding box computation</b> via Apache Batik's GVT tree —
+     *   <li><b>Accurate SVG bounding box computation</b> via Apache Batik's GVT tree â€”
      *       replaces the heuristic JS-side {@code _computeElementDims()} for complex
      *       elements (text with tspan, groups with transforms)</li>
      * </ul>
@@ -312,4 +313,5 @@ final class GraalJsExecutor {
         }
     }
 }
+
 

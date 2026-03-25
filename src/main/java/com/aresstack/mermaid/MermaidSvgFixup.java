@@ -31,13 +31,13 @@ public final class MermaidSvgFixup {
     private static final Logger LOG = Logger.getLogger(MermaidSvgFixup.class.getName());
     private static final String SVG_NS = "http://www.w3.org/2000/svg";
 
-    // ── Typographic constants ───────────────────────────────────
+    // â”€â”€ Typographic constants â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
     /** Default SVG font size in px (matches Mermaid's {@code font-size:16px}). */
     private static final double DEFAULT_FONT_SIZE = 16.0;
-    /** Line-height factor relative to font size (CSS normal ≈ 1.2). */
+    /** Line-height factor relative to font size (CSS normal â‰ˆ 1.2). */
     private static final double LINE_HEIGHT_FACTOR = 1.2;
     /** Baseline shift as em-value for single-line vertical centering.
-     *  0.35 em ≈ half the cap-height, placing the glyph centre at y=0. */
+     *  0.35 em â‰ˆ half the cap-height, placing the glyph centre at y=0. */
     private static final String BASELINE_SHIFT_EM = "0.35em";
 
     /** Regex for Mermaid mindmap rounded-rect path commands.
@@ -45,8 +45,8 @@ public final class MermaidSvgFixup {
     private static final java.util.regex.Pattern MINDMAP_BOX_PATH = java.util.regex.Pattern.compile(
             "M\\s*(-?[\\d.]+)\\s+(-?[\\d.]+)"        // M x y  (x = -halfW, y = halfH)
             + "\\s+v\\s*(-?[\\d.]+)"                  // v -H
-            + "\\s+q\\s*0\\s*,\\s*(-?[\\d.]+)"        // q 0,-R …
-            + "\\s+[\\d.]+\\s*,\\s*-?[\\d.]+"         // … R,-R  (rest of first quadratic)
+            + "\\s+q\\s*0\\s*,\\s*(-?[\\d.]+)"        // q 0,-R â€¦
+            + "\\s+[\\d.]+\\s*,\\s*-?[\\d.]+"         // â€¦ R,-R  (rest of first quadratic)
             + "\\s+h\\s*(-?[\\d.]+)"                  // h W  (content width)
     );
 
@@ -89,21 +89,21 @@ public final class MermaidSvgFixup {
             moveMarkersToDefs(doc);
             fixMarkerFills(doc);
             fixMarkerViewBox(doc);
-            fixMarkerOrient(doc);          // auto-start-reverse → auto (SVG 2→1.1)
-            flattenSwitchElements(doc);    // <switch> → keep first child only
+            fixMarkerOrient(doc);          // auto-start-reverse â†’ auto (SVG 2â†’1.1)
+            flattenSwitchElements(doc);    // <switch> â†’ keep first child only
             fixGroupZOrder(doc);           // edges paint ON TOP of nodes
             fixNodeZOrder(doc);
             fixLabelCentering(doc);
             fixErEntityLabels(doc);        // reposition ER entity labels into correct cells
             fixMindmapMultilineBoxes(doc);  // expand boxes for multi-line text
             fixRequirementLabels(doc);     // vertically distribute overlapping labels in requirement boxes
-            fixImageHref(doc);             // SVG 2 href → xlink:href for Batik
+            fixImageHref(doc);             // SVG 2 href â†’ xlink:href for Batik
             fixEdgeStrokes(doc);
             fixEdgeLabelBackground(doc);
             fixEdgeLabelRect(doc);
             fixStrokeNoneOnLines(doc);
             fixCssFillNone(doc);
-            fixCssForBatik(doc);           // hsl()→hex, strip unsupported CSS
+            fixCssForBatik(doc);           // hsl()â†’hex, strip unsupported CSS
             fixAlignmentBaseline(doc);     // remove alignment-baseline AND dominant-baseline attrs
             fixSequenceText(doc);          // fix text positioning in seq diagrams
             fixSequenceLifelines(doc);     // extend lifelines to bottom actor boxes
@@ -122,9 +122,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Regex-based Batik sanitisation (fallback + safety net)
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Apply essential Batik-compatibility fixes using regex only.
@@ -148,7 +148,7 @@ public final class MermaidSvgFixup {
         // which would indicate a 2nd value.  The safest heuristic: only fix if the Java bridge
         // injected locale-formatted numbers, which would be "translate(10,5 -18,9)" pattern
         // (space-separated, not comma-separated values).
-        // For safety, skip this fix entirely — GraalJS and our Java code use Locale.US.
+        // For safety, skip this fix entirely â€” GraalJS and our Java code use Locale.US.
         // If locale issues resurface, fix them at the source (Java String.format with Locale.US).
 
         // Fix transform attributes containing invalid values that aren't covered
@@ -164,7 +164,7 @@ public final class MermaidSvgFixup {
                 String val = badTransformM.group(1).trim();
                 // A valid SVG transform must contain at least one known function
                 if (!val.isEmpty() && !val.matches(".*\\b(translate|rotate|scale|matrix|skewX|skewY)\\s*\\(.*")) {
-                    // Not a valid transform → remove the entire attribute
+                    // Not a valid transform â†’ remove the entire attribute
                     badTransformM.appendReplacement(badTransformSb, "");
                 } else {
                     badTransformM.appendReplacement(badTransformSb,
@@ -182,7 +182,7 @@ public final class MermaidSvgFixup {
         // Remove alignment-baseline from CSS (in <style> blocks and inline styles)
         svg = svg.replaceAll("alignment-baseline\\s*:\\s*[^;\"'}<]+[;]?", "");
 
-        // Remove @keyframes blocks (Batik CSS engine cannot parse them → NPE)
+        // Remove @keyframes blocks (Batik CSS engine cannot parse them â†’ NPE)
         // Handles nested braces: @keyframes name { from { ... } to { ... } }
         svg = svg.replaceAll("@keyframes\\s+[^{]+\\{[^}]*\\{[^}]*\\}[^}]*\\{[^}]*\\}[^}]*\\}", "");
         svg = svg.replaceAll("@keyframes\\s+[^{]+\\{[^}]*\\{[^}]*\\}[^}]*\\}", "");
@@ -194,10 +194,10 @@ public final class MermaidSvgFixup {
         // Remove stroke-linecap (Batik may choke on certain contexts)
         svg = svg.replaceAll("stroke-linecap\\s*:\\s*[^;\"'}<]+[;]?", "");
 
-        // Replace orient="auto-start-reverse" with orient="auto" (SVG 2 → 1.1)
+        // Replace orient="auto-start-reverse" with orient="auto" (SVG 2 â†’ 1.1)
         svg = svg.replace("orient=\"auto-start-reverse\"", "orient=\"auto\"");
 
-        // Replace "transparent" paint value with "none" — Batik's CSS parser throws
+        // Replace "transparent" paint value with "none" â€” Batik's CSS parser throws
         // NullPointerException on "transparent" (CSS3 color, not SVG 1.1).
         svg = svg.replace("fill:transparent", "fill:none");
         svg = svg.replace("stroke:transparent", "stroke:none");
@@ -235,10 +235,10 @@ public final class MermaidSvgFixup {
         svg = svg.replaceAll("\\s+dominant-baseline\\s*=\\s*\"[^\"]*\"", "");
         svg = svg.replaceAll("\\s+dominant-baseline\\s*=\\s*'[^']*'", "");
 
-        // Replace CSS var() references — Batik has no CSS variable support
+        // Replace CSS var() references â€” Batik has no CSS variable support
         svg = svg.replace("var(--mermaid-font-family)",
                 "'trebuchet ms', verdana, arial, sans-serif");
-        // Remove remaining var(--name, fallback) → use fallback
+        // Remove remaining var(--name, fallback) â†’ use fallback
         svg = svg.replaceAll("var\\(\\s*--[\\w-]+\\s*,\\s*([^)]+)\\)", "$1");
 
         // Fix fractional rgb() values: Mermaid git-graph theme emits values like
@@ -262,7 +262,7 @@ public final class MermaidSvgFixup {
             svg = rgbSb.toString();
         }
 
-        // Clean up empty/broken style attributes: style=";;;" → remove
+        // Clean up empty/broken style attributes: style=";;;" â†’ remove
         svg = svg.replaceAll("\\s+style\\s*=\\s*\"[;\\s]*\"", "");
         svg = svg.replaceAll("\\s+style\\s*=\\s*'[;\\s]*'", "");
 
@@ -291,7 +291,7 @@ public final class MermaidSvgFixup {
             svg = hslAttrSb.toString();
         }
 
-        // Fix negative width on <rect> elements — Batik throws
+        // Fix negative width on <rect> elements â€” Batik throws
         // "The attribute 'width' of the element <rect> cannot be negative".
         // Gantt charts produce these when D3's time scale inverts coordinates.
         // Convert negative width to absolute value and shift x position accordingly.
@@ -396,10 +396,10 @@ public final class MermaidSvgFixup {
         // alignment-baseline (already done by regexSanitize, but be safe)
         svg = regexSanitize(svg);
 
-        // Convert hsl() → hex in all contexts
+        // Convert hsl() â†’ hex in all contexts
         svg = replaceHslValues(svg);
 
-        // Convert rgba() → hex
+        // Convert rgba() â†’ hex
         svg = replaceRgbaValues(svg);
 
         // Strip unsupported CSS properties
@@ -423,9 +423,9 @@ public final class MermaidSvgFixup {
         return svg;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 1 — move <marker> elements into <defs>
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 1 â€” move <marker> elements into <defs>
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Batik only resolves {@code url(#id)} marker references when the
@@ -463,9 +463,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 2 — marker arrow fills
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 2 â€” marker arrow fills
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Inside every {@code <marker>} element, ensure child shapes
@@ -501,9 +501,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — flatten <switch> elements for Batik
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” flatten <switch> elements for Batik
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Batik has issues with SVG {@code <switch>} elements when the children
@@ -547,15 +547,15 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — reorder top-level groups: nodes BEFORE edges
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” reorder top-level groups: nodes BEFORE edges
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
-     * Mermaid's SVG group order is {@code clusters → edgePaths → edgeLabels → nodes}.
+     * Mermaid's SVG group order is {@code clusters â†’ edgePaths â†’ edgeLabels â†’ nodes}.
      * This means node rectangles paint ON TOP of edge arrows, hiding arrowheads.
      * <p>
-     * We reorder to: {@code clusters → nodes → edgePaths → edgeLabels}
+     * We reorder to: {@code clusters â†’ nodes â†’ edgePaths â†’ edgeLabels}
      * so that edges (with their marker arrowheads) paint on top of nodes.
      */
     private static void fixGroupZOrder(Document doc) {
@@ -593,7 +593,7 @@ public final class MermaidSvgFixup {
             // Remove all children
             while (g.getFirstChild() != null) g.removeChild(g.getFirstChild());
 
-            // Re-add in correct order: clusters → nodes → edgePaths → edgeLabels → others
+            // Re-add in correct order: clusters â†’ nodes â†’ edgePaths â†’ edgeLabels â†’ others
             if (clusters != null) g.appendChild(clusters);
             g.appendChild(nodes);
             g.appendChild(edgePaths);
@@ -602,9 +602,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 3 — node z-order: shape before label
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 3 â€” node z-order: shape before label
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Inside every {@code <g class="node ...">} element, reorder children
@@ -639,9 +639,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 4 — recenter labels inside nodes
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 4 â€” recenter labels inside nodes
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid positions label groups with a {@code translate()} that
@@ -666,12 +666,12 @@ public final class MermaidSvgFixup {
             String cls = attr(g, "class");
             if (!cls.contains("node")) continue;
 
-            // Skip ER entity nodes — their labels are positioned in cells,
+            // Skip ER entity nodes â€” their labels are positioned in cells,
             // not centered.  fixErEntityLabels() handles them separately.
             String id = attr(g, "id");
             if (id.startsWith("entity-")) continue;
 
-            // Skip class diagram nodes — they have specific annotation/member/method
+            // Skip class diagram nodes â€” they have specific annotation/member/method
             // positioning that should not be overridden.
             if (id.startsWith("classId-")) continue;
 
@@ -724,7 +724,7 @@ public final class MermaidSvgFixup {
                 }
             }
 
-            // Clear y/dy on ALL inner <tspan> elements — Mermaid sets these
+            // Clear y/dy on ALL inner <tspan> elements â€” Mermaid sets these
             // for browser layout but they cause wrong offsets in Batik
             for (int t = 0; t < tspans.getLength(); t++) {
                 Element tspan = (Element) tspans.item(t);
@@ -760,9 +760,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 4a — reposition ER entity labels into correct cells
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 4a â€” reposition ER entity labels into correct cells
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid's ER diagram renderer positions entity attribute labels using
@@ -776,7 +776,7 @@ public final class MermaidSvgFixup {
      * <p>
      * Label order per entity:
      * <ol>
-     *   <li>{@code <g class="label name">} — entity name, centered in the header row</li>
+     *   <li>{@code <g class="label name">} â€” entity name, centered in the header row</li>
      *   <li>For each attribute row: type, name, keys, comment (4 labels per row)</li>
      * </ol>
      */
@@ -789,7 +789,7 @@ public final class MermaidSvgFixup {
             String id = attr(g, "id");
             if (!id.startsWith("entity-")) continue;
 
-            // ── Parse entity box bounds from the first <path> child ──
+            // â”€â”€ Parse entity box bounds from the first <path> child â”€â”€
             double boxMinX = 0, boxMaxX = 0, boxMinY = 0, boxMaxY = 0;
             boolean foundBox = false;
             NodeList children = g.getChildNodes();
@@ -819,7 +819,7 @@ public final class MermaidSvgFixup {
             }
             if (!foundBox) continue;
 
-            // ── Parse dividers to find row and column boundaries ──
+            // â”€â”€ Parse dividers to find row and column boundaries â”€â”€
             List<Double> hDividers = new ArrayList<Double>(); // horizontal y values
             List<Double> vDividers = new ArrayList<Double>(); // vertical x values
             for (int j = 0; j < children.getLength(); j++) {
@@ -836,11 +836,11 @@ public final class MermaidSvgFixup {
                 double dw = db[2] - db[0]; // width of divider path
                 double dh = db[3] - db[1]; // height of divider path
                 if (dw > dh * 3) {
-                    // Horizontal divider — spans most of the box width
+                    // Horizontal divider â€” spans most of the box width
                     double y = (db[1] + db[3]) / 2.0;
                     if (!containsApprox(hDividers, y, 2)) hDividers.add(y);
                 } else if (dh > dw * 3) {
-                    // Vertical divider — spans most of the box height
+                    // Vertical divider â€” spans most of the box height
                     double x = (db[0] + db[2]) / 2.0;
                     if (!containsApprox(vDividers, x, 2)) vDividers.add(x);
                 }
@@ -851,7 +851,7 @@ public final class MermaidSvgFixup {
             // If no horizontal divider found, there's only the name row and no attributes
             if (hDividers.isEmpty()) continue;
 
-            // ── Build cell grid ──
+            // â”€â”€ Build cell grid â”€â”€
             // Rows: [boxMinY, hDiv1] = name row, then attribute rows below.
             double nameRowTop = boxMinY;
             double nameRowBottom = hDividers.get(0);
@@ -862,7 +862,7 @@ public final class MermaidSvgFixup {
             colBounds.add(boxMaxX);
             int visibleCols = colBounds.size() - 1;
 
-            // ── Collect label <g> elements in order ──
+            // â”€â”€ Collect label <g> elements in order â”€â”€
             List<Element> labels = new ArrayList<Element>();
             for (int j = 0; j < children.getLength(); j++) {
                 Node child = children.item(j);
@@ -874,15 +874,15 @@ public final class MermaidSvgFixup {
             }
             if (labels.isEmpty()) continue;
 
-            // ── Position entity name ──
-            // First label is the entity name — center it in the name row
+            // â”€â”€ Position entity name â”€â”€
+            // First label is the entity name â€” center it in the name row
             Element nameLabel = labels.get(0);
             double nameCenterX = 0; // already centered horizontally
             double nameCenterY = (nameRowTop + nameRowBottom) / 2.0;
             nameLabel.setAttribute("transform",
                     "translate(" + fmt(nameCenterX) + ", " + fmt(nameCenterY) + ")");
 
-            // ── Position attribute labels ──
+            // â”€â”€ Position attribute labels â”€â”€
             // Mermaid ER uses exactly 4 labels per attribute row:
             //   attribute-type, attribute-name, attribute-keys, attribute-comment
             // But only 3 visible columns exist (comment shares the keys column).
@@ -933,7 +933,7 @@ public final class MermaidSvgFixup {
     }
 
     /** Format a double as a compact string (no trailing zeros).
-     *  MUST use Locale.US — SVG requires '.' as decimal separator.
+     *  MUST use Locale.US â€” SVG requires '.' as decimal separator.
      *  Using the default locale on German systems would produce ',' which
      *  makes the SVG invalid (Batik rejects transform="translate(0, -56,6)"). */
     private static String fmt(double v) {
@@ -949,9 +949,9 @@ public final class MermaidSvgFixup {
         return false;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 4b — expand mindmap node boxes for multi-line text
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 4b â€” expand mindmap node boxes for multi-line text
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid mindmap nodes use a fixed-height box ({@code <path>} with a
@@ -1013,7 +1013,7 @@ public final class MermaidSvgFixup {
 
             try {
                 double halfW    = Math.abs(Double.parseDouble(pm.group(1)));
-                // group(2) = oldHalfH — not needed, we compute the new one
+                // group(2) = oldHalfH â€” not needed, we compute the new one
                 double oldH     = Math.abs(Double.parseDouble(pm.group(3)));
                 double radius   = Math.abs(Double.parseDouble(pm.group(4)));
                 double contentW = Math.abs(Double.parseDouble(pm.group(5)));
@@ -1030,7 +1030,7 @@ public final class MermaidSvgFixup {
                 double newH     = oldH + (numRows - 1) * lineHeight;
                 double newHalfH = newH / 2.0;
 
-                // Rebuild path — only height changes; width and radii are preserved
+                // Rebuild path â€” only height changes; width and radii are preserved
                 long hw = Math.round(halfW);
                 long hh = Math.round(newHalfH);
                 long h  = Math.round(newH);
@@ -1055,7 +1055,7 @@ public final class MermaidSvgFixup {
                     lineEl.setAttribute("y2", String.valueOf(newLineY));
                 }
             } catch (NumberFormatException ignored) {
-                // Path doesn't match expected number format — skip silently
+                // Path doesn't match expected number format â€” skip silently
             }
         }
     }
@@ -1077,14 +1077,14 @@ public final class MermaidSvgFixup {
         return count;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 4c — vertically distribute Requirement diagram labels
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 4c â€” vertically distribute Requirement diagram labels
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid's requirement diagram places each row label (type, name,
      * ID, Text, Risk, Verification) in its own {@code <g class="label">}
-     * group — but the browser-shim's getBBox() doesn't return correct
+     * group â€” but the browser-shim's getBBox() doesn't return correct
      * heights during layout, so Mermaid sets <em>all</em> label groups
      * to {@code translate(0, 0)}.  Result: all 6 rows overlap on a
      * single line.
@@ -1093,18 +1093,18 @@ public final class MermaidSvgFixup {
      * {@code aria-roledescription="requirement"} attribute, then distributes
      * the label groups vertically based on their row position within each
      * box.  The first divider line separates the title area (row 0 + 1)
-     * from the attribute area (rows 2–5).
+     * from the attribute area (rows 2â€“5).
      * <p>
      * Structure per requirement node:
      * <pre>
      *   &lt;g class="node default" transform="translate(X, Y)"&gt;
-     *     &lt;g class="basic label-container"&gt;&lt;path/&gt;&lt;path/&gt;&lt;/g&gt;  ← box + divider
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 0: &lt;&lt;Requirement&gt;&gt;
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 1: name (bold)
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 2: ID
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 3: Text
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 4: Risk
-     *     &lt;g class="label" transform="translate(0, 0)"&gt;…&lt;/g&gt;  ← row 5: Verification
+     *     &lt;g class="basic label-container"&gt;&lt;path/&gt;&lt;path/&gt;&lt;/g&gt;  â† box + divider
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 0: &lt;&lt;Requirement&gt;&gt;
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 1: name (bold)
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 2: ID
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 3: Text
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 4: Risk
+     *     &lt;g class="label" transform="translate(0, 0)"&gt;â€¦&lt;/g&gt;  â† row 5: Verification
      *   &lt;/g&gt;
      * </pre>
      * The element node (type=system) has only 4 label rows (type, name, + 2 attributes).
@@ -1127,7 +1127,7 @@ public final class MermaidSvgFixup {
             String nodeTrans = nodeG.getAttribute("transform");
             if (nodeTrans == null || !nodeTrans.contains("translate")) continue;
 
-            // ── Collect child label groups and the label-container ──
+            // â”€â”€ Collect child label groups and the label-container â”€â”€
             List<Element> labelGroups = new ArrayList<Element>();
             Element containerG = null;
             NodeList children = nodeG.getChildNodes();
@@ -1145,7 +1145,7 @@ public final class MermaidSvgFixup {
             }
             if (labelGroups.size() < 3 || containerG == null) continue;
 
-            // ── Parse box bounds from the first <path> in label-container ──
+            // â”€â”€ Parse box bounds from the first <path> in label-container â”€â”€
             double boxMinX = 0, boxMinY = 0, boxMaxX = 0, boxMaxY = 0;
             boolean foundBox = false;
             NodeList containerPaths = containerG.getElementsByTagNameNS("*", "path");
@@ -1162,7 +1162,7 @@ public final class MermaidSvgFixup {
             }
             if (!foundBox) continue;
 
-            // ── Find divider y-coordinate (separates title rows from attribute rows) ──
+            // â”€â”€ Find divider y-coordinate (separates title rows from attribute rows) â”€â”€
             double dividerY = Double.NaN;
             if (containerPaths.getLength() > 1) {
                 String d2 = ((Element) containerPaths.item(1)).getAttribute("d");
@@ -1176,7 +1176,7 @@ public final class MermaidSvgFixup {
 
             int numLabels = labelGroups.size();
 
-            // ── Resolve font size from first text element ──
+            // â”€â”€ Resolve font size from first text element â”€â”€
             double fontSize = DEFAULT_FONT_SIZE;
             NodeList textNodes = nodeG.getElementsByTagNameNS("*", "text");
             if (textNodes.getLength() > 0) {
@@ -1186,7 +1186,7 @@ public final class MermaidSvgFixup {
             double lineHeight = fontSize * LINE_HEIGHT_FACTOR;
 
             if (!Double.isNaN(dividerY) && numLabels >= 4) {
-                // ── Requirement box with divider: title area + attribute area ──
+                // â”€â”€ Requirement box with divider: title area + attribute area â”€â”€
                 // Title rows (0, 1): center in [boxMinY, dividerY]
                 // Attribute rows (2..n): distribute in [dividerY, boxMaxY]
 
@@ -1210,7 +1210,7 @@ public final class MermaidSvgFixup {
                             "translate(0, " + fmt(cy) + ")");
                 }
             } else {
-                // ── Simple box without divider (e.g. element node) ──
+                // â”€â”€ Simple box without divider (e.g. element node) â”€â”€
                 double totalH = boxMaxY - boxMinY;
                 double rowH = totalH / numLabels;
                 for (int r = 0; r < numLabels; r++) {
@@ -1222,9 +1222,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 4d — SVG 2 <image href> → xlink:href for Batik
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 4d â€” SVG 2 <image href> â†’ xlink:href for Batik
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * SVG 2 introduced plain {@code href} on {@code <image>} elements,
@@ -1263,9 +1263,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 5 — explicit stroke on edge paths
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 5 â€” explicit stroke on edge paths
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Edge paths ({@code <path class="flowchart-link ...">}) rely on CSS
@@ -1343,9 +1343,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 6 — edge label backgrounds
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 6 â€” edge label backgrounds
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid's edge labels use {@code <rect>} with CSS-based opacity.
@@ -1386,7 +1386,7 @@ public final class MermaidSvgFixup {
                 // (dashed, thick) remains faintly visible
                 rect.setAttribute("style", "opacity:0.85");
 
-                // Re-center the rect around (0,0) — Mermaid positions it
+                // Re-center the rect around (0,0) â€” Mermaid positions it
                 // based on browser font metrics which don't match Batik
                 double w = parseDouble(rect, "width", 0);
                 double h = parseDouble(rect, "height", 0);
@@ -1398,12 +1398,12 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix 7 — stroke="none" on sequence-diagram lines
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix 7 â€” stroke="none" on sequence-diagram lines
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static void fixStrokeNoneOnLines(Document doc) {
-        // Already handled in fixEdgeStrokes — this is kept for
+        // Already handled in fixEdgeStrokes â€” this is kept for
         // any remaining lines not caught there.
         NodeList lines = doc.getElementsByTagNameNS("*", "line");
         for (int i = 0; i < lines.getLength(); i++) {
@@ -1419,15 +1419,15 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — remove viewBox from <marker> elements
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” remove viewBox from <marker> elements
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Batik has known issues rendering marker content when the marker's
      * {@code viewBox} aspect ratio doesn't match {@code markerWidth/markerHeight}.
      * Mermaid emits markers with {@code viewBox="0 0 12 20"} but actual arrow
-     * shapes that fit in a 10×10 box.  Removing the viewBox lets Batik render
+     * shapes that fit in a 10Ã—10 box.  Removing the viewBox lets Batik render
      * the marker content directly in the marker coordinate system.
      */
     private static void fixMarkerViewBox(Document doc) {
@@ -1437,10 +1437,10 @@ public final class MermaidSvgFixup {
             if (!(n instanceof Element)) continue;
             Element marker = (Element) n;
 
-            // Remove viewBox — let marker content use markerWidth/Height directly
+            // Remove viewBox â€” let marker content use markerWidth/Height directly
             marker.removeAttribute("viewBox");
 
-            // Ensure marker is reasonably sized — not too small and not absurdly large.
+            // Ensure marker is reasonably sized â€” not too small and not absurdly large.
             // Mermaid class-diagram emits markerHeight="240" markerWidth="190" for
             // start markers, which creates a huge coordinate space that can confuse Batik.
             String mw = marker.getAttribute("markerWidth");
@@ -1459,9 +1459,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — insert background rect behind edge labels
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” insert background rect behind edge labels
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Replace {@code orient="auto-start-reverse"} on {@code <marker>}
@@ -1484,9 +1484,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — fix text in sequence diagrams
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” fix text in sequence diagrams
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Fix text positioning in sequence diagrams.  Mermaid's sequence
@@ -1503,7 +1503,7 @@ public final class MermaidSvgFixup {
             Element text = (Element) n;
             String cls = attr(text, "class");
 
-            // Actor labels: class="actor actor-box" — need dy for centering
+            // Actor labels: class="actor actor-box" â€” need dy for centering
             if (cls.contains("actor")) {
                 text.removeAttribute("dominant-baseline");
                 // Set dy for vertical centering (replaces dominant-baseline:central)
@@ -1517,7 +1517,7 @@ public final class MermaidSvgFixup {
                     tspan.removeAttribute("dy");
                 }
             }
-            // Message labels: class="messageText" — have dy="1em" which is too much
+            // Message labels: class="messageText" â€” have dy="1em" which is too much
             else if (cls.contains("messageText")) {
                 text.removeAttribute("dominant-baseline");
                 // Mermaid sets dy="1em" assuming dominant-baseline:middle.
@@ -1525,11 +1525,11 @@ public final class MermaidSvgFixup {
                 // (at bottom of letters). We need a smaller dy.
                 text.setAttribute("dy", "0.35em");
 
-                // ── Move text closer to the corresponding arrow line ────────
+                // â”€â”€ Move text closer to the corresponding arrow line â”€â”€â”€â”€â”€â”€â”€â”€
                 // In the headless shim the text bbox is over-estimated, causing
                 // Mermaid to place message labels ~40 px above the arrow instead
                 // of the expected ~5 px.  Walk forward through siblings to find
-                // the next <line class="messageLine…"> and re-position the text
+                // the next <line class="messageLineâ€¦"> and re-position the text
                 // so that the visual baseline sits a small gap above the line.
                 Element nextLine = findNextMessageLine(text);
                 if (nextLine != null) {
@@ -1541,17 +1541,17 @@ public final class MermaidSvgFixup {
                             double textY = Double.parseDouble(textYStr);
                             // Resolve font-size from style (default 16 px)
                             double fontSize = parseFontSizeFromStyle(text);
-                            // dy=0.35em shifts visual baseline down by 0.35·fontSize
+                            // dy=0.35em shifts visual baseline down by 0.35Â·fontSize
                             double dyShift = 0.35 * fontSize;
                             // We want the visual text bottom (baseline + descent)
                             // to be ~4 px above the arrow line.
-                            // descent ≈ 0.25·fontSize
+                            // descent â‰ˆ 0.25Â·fontSize
                             double desiredGap = 4;
                             double descent = fontSize * 0.25;
                             // visual bottom = newY + dyShift + descent
                             // visual bottom = lineY - desiredGap
                             double newY = lineY - desiredGap - descent - dyShift;
-                            // Only move DOWN (towards line) — never push text further away
+                            // Only move DOWN (towards line) â€” never push text further away
                             if (newY > textY) {
                                 text.setAttribute("y", String.valueOf(Math.round(newY)));
                             }
@@ -1589,7 +1589,7 @@ public final class MermaidSvgFixup {
                         return el;
                     }
                 }
-                // Stop if we hit the next messageText — no matching line found
+                // Stop if we hit the next messageText â€” no matching line found
                 if ("text".equalsIgnoreCase(el.getLocalName())) {
                     String cls = attr(el, "class");
                     if (cls.contains("messageText")) break;
@@ -1627,7 +1627,7 @@ public final class MermaidSvgFixup {
         return 16.0;
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * If an {@code <g class="edgeLabel">} has text but no {@code <rect>}
@@ -1677,9 +1677,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — patch CSS fill:none to prevent marker inheritance
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” patch CSS fill:none to prevent marker inheritance
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid's embedded {@code <style>} block contains rules like
@@ -1694,7 +1694,7 @@ public final class MermaidSvgFixup {
             String css = styleNode.getTextContent();
             if (css == null || css.isEmpty()) continue;
 
-            // Add marker content override — ensures arrow fills are not overridden
+            // Add marker content override â€” ensures arrow fills are not overridden
             if (!css.contains(".arrowMarkerPath")) {
                 css = css + "\n.arrowMarkerPath{fill:#333333 !important;}\n"
                         + "marker path, marker circle, marker polygon{fill:#333333 !important;}\n";
@@ -1703,18 +1703,18 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — clean CSS for Batik compatibility
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” clean CSS for Batik compatibility
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Batik's CSS parser does not support:
      * <ul>
-     *   <li>{@code hsl()} colour functions → convert to hex</li>
+     *   <li>{@code hsl()} colour functions â†’ convert to hex</li>
      *   <li>{@code position}, {@code box-shadow}, {@code filter},
      *       {@code z-index}, {@code pointer-events}, {@code cursor}
-     *       → strip them</li>
-     *   <li>{@code rgba()} colour functions → convert to hex (drop alpha)</li>
+     *       â†’ strip them</li>
+     *   <li>{@code rgba()} colour functions â†’ convert to hex (drop alpha)</li>
      * </ul>
      * Without this fix, sequence diagrams fail to rasterise entirely.
      */
@@ -1728,10 +1728,10 @@ public final class MermaidSvgFixup {
             // 1) Remove @keyframes blocks using iterative brace counting
             css = removeKeyframesBlocks(css);
 
-            // 2) Convert hsl(...) → hex
+            // 2) Convert hsl(...) â†’ hex
             css = replaceHslValues(css);
 
-            // 3) Convert rgba(...) → hex (drop alpha)
+            // 3) Convert rgba(...) â†’ hex (drop alpha)
             css = replaceRgbaValues(css);
 
             // 4) Remove unsupported CSS properties
@@ -1772,7 +1772,7 @@ public final class MermaidSvgFixup {
             // 8) Replace CSS var() references with their fallback or a safe default.
             //    Mermaid git-graph emits font-family:var(--mermaid-font-family);
             //    Batik's CSS engine cannot handle var() at all.
-            //    Pattern: property:...var(--name)... → strip the var() call
+            //    Pattern: property:...var(--name)... â†’ strip the var() call
             css = replaceCssVarReferences(css);
 
             styleNode.setTextContent(css);
@@ -1830,13 +1830,13 @@ public final class MermaidSvgFixup {
      * <p>
      * Strategy:
      * <ul>
-     *   <li>{@code var(--name, fallback)} → use the fallback value</li>
-     *   <li>{@code var(--mermaid-font-family)} → replace with default font stack</li>
-     *   <li>Any remaining {@code var(--...)} → remove the entire property declaration</li>
+     *   <li>{@code var(--name, fallback)} â†’ use the fallback value</li>
+     *   <li>{@code var(--mermaid-font-family)} â†’ replace with default font stack</li>
+     *   <li>Any remaining {@code var(--...)} â†’ remove the entire property declaration</li>
      * </ul>
      */
     private static String replaceCssVarReferences(String css) {
-        // Step 1: var(--name, fallback) → use fallback
+        // Step 1: var(--name, fallback) â†’ use fallback
         css = css.replaceAll("var\\(\\s*--[\\w-]+\\s*,\\s*([^)]+)\\)", "$1");
 
         // Step 2: known Mermaid variables with concrete replacements
@@ -1844,7 +1844,7 @@ public final class MermaidSvgFixup {
                 "'trebuchet ms', verdana, arial, sans-serif");
 
         // Step 3: remove any remaining property declarations that contain var()
-        // e.g. "font-family:var(--foo);" → ""
+        // e.g. "font-family:var(--foo);" â†’ ""
         css = css.replaceAll("[\\w-]+\\s*:\\s*[^;{}]*var\\(--[^)]*\\)[^;{}]*(;|(?=\\}))", "");
 
         return css;
@@ -1983,9 +1983,9 @@ public final class MermaidSvgFixup {
         return v < 0 ? 0 : (v > 255 ? 255 : v);
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — recalculate viewBox from element attributes
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” recalculate viewBox from element attributes
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Scans all SVG elements for positional attributes (x, y, width, height,
@@ -1993,7 +1993,7 @@ public final class MermaidSvgFixup {
      * viewBox to encompass all content.
      * <p>
      * The new viewBox is the <b>union</b> of the scanned element bounds
-     * (with padding) and Mermaid's original viewBox — this ensures content
+     * (with padding) and Mermaid's original viewBox â€” this ensures content
      * is never clipped, even when elements extend beyond Mermaid's own
      * viewBox calculation.
      */
@@ -2001,7 +2001,7 @@ public final class MermaidSvgFixup {
         Element svgRoot = doc.getDocumentElement();
         if (svgRoot == null) return;
 
-        // Parse Mermaid's original viewBox — it is always our baseline.
+        // Parse Mermaid's original viewBox â€” it is always our baseline.
         // Mermaid computes its viewBox from its own layout engine, which has
         // much better knowledge of the diagram geometry than our post-processor.
         String currentVb = svgRoot.getAttribute("viewBox");
@@ -2021,7 +2021,7 @@ public final class MermaidSvgFixup {
         }
 
         if (hasMermaidVb) {
-            // Mermaid set a viewBox — use it as baseline.
+            // Mermaid set a viewBox â€” use it as baseline.
             // However, Mermaid computes the viewBox using headless text metrics
             // (our JavaBridge measureTextWidth).  These can differ slightly from
             // what Batik actually renders, especially for axis labels and titles
@@ -2048,7 +2048,7 @@ public final class MermaidSvgFixup {
                 double tx = parseDouble(tel, "x", 0);
                 double ty = parseDouble(tel, "y", 0);
 
-                // Parse the element's OWN transform — chart text elements
+                // Parse the element's OWN transform â€” chart text elements
                 // use x="0" y="0" with transform="translate(X,Y) rotate(A)"
                 double[] selfTranslate = parseElementTranslate(tel);
                 tx += selfTranslate[0];
@@ -2099,7 +2099,7 @@ public final class MermaidSvgFixup {
                 double textLeft, textRight, textTop, textBottom;
 
                 if (isRotated) {
-                    // Rotated text (e.g. Y-axis labels rotated ±90°/270°):
+                    // Rotated text (e.g. Y-axis labels rotated Â±90Â°/270Â°):
                     // Width and height swap.  The ascent/descent become
                     // horizontal extent; the text width becomes vertical extent.
                     double halfTextWidth = tw / 2;  // becomes vertical extent
@@ -2155,7 +2155,7 @@ public final class MermaidSvgFixup {
             return;
         }
 
-        // No Mermaid viewBox — compute bounds from scratch by scanning all elements
+        // No Mermaid viewBox â€” compute bounds from scratch by scanning all elements
         _minX = Double.MAX_VALUE;  _minY = Double.MAX_VALUE;
         _maxX = -Double.MAX_VALUE; _maxY = -Double.MAX_VALUE;
         boolean found = false;
@@ -2168,7 +2168,7 @@ public final class MermaidSvgFixup {
             Element el = (Element) n;
             String tag = el.getLocalName();
 
-            // Skip markers and defs children — their coords are local
+            // Skip markers and defs children â€” their coords are local
             if ("marker".equals(tag) || "defs".equals(tag) || "symbol".equals(tag)) continue;
             if (isInsideTag(el, "marker") || isInsideTag(el, "defs")) continue;
 
@@ -2238,7 +2238,7 @@ public final class MermaidSvgFixup {
                     found = true;
                 }
             }
-            // text: x, y — use wider estimate (avg char width ~9px)
+            // text: x, y â€” use wider estimate (avg char width ~9px)
             else if ("text".equals(tag)) {
                 double x = parseDouble(el, "x", 0);
                 double y = parseDouble(el, "y", 0);
@@ -2501,9 +2501,9 @@ public final class MermaidSvgFixup {
         return new double[]{minX, minY, maxX, maxY};
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — remove alignment-baseline (Batik incompatible)
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” remove alignment-baseline (Batik incompatible)
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid 11 uses {@code alignment-baseline="central"} on text elements.
@@ -2528,7 +2528,7 @@ public final class MermaidSvgFixup {
             if (el.hasAttribute("alignment-baseline")) {
                 el.removeAttribute("alignment-baseline");
             }
-            // Remove dominant-baseline XML attribute — Batik may choke on
+            // Remove dominant-baseline XML attribute â€” Batik may choke on
             // values like "central", "middle" that are CSS Inline Layout 3 values
             if (el.hasAttribute("dominant-baseline")) {
                 el.removeAttribute("dominant-baseline");
@@ -2556,9 +2556,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — extend sequence-diagram lifelines to bottom actor boxes
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” extend sequence-diagram lifelines to bottom actor boxes
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * Mermaid's sequence-diagram lifelines may be too short when the
@@ -2583,7 +2583,7 @@ public final class MermaidSvgFixup {
         }
         if (lifelines.isEmpty()) return;
 
-        // Collect all actor rects — find the highest y (bottom actor boxes)
+        // Collect all actor rects â€” find the highest y (bottom actor boxes)
         // and the lowest y (top actor boxes)
         NodeList rects = doc.getElementsByTagNameNS("*", "rect");
         double topBoxBottom = 0;
@@ -2644,9 +2644,9 @@ public final class MermaidSvgFixup {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Fix — inject missing sequence diagram overlays
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Fix â€” inject missing sequence diagram overlays
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /**
      * GraalJS's headless Mermaid rendering may not produce structural overlay
@@ -2673,7 +2673,7 @@ public final class MermaidSvgFixup {
             String cls = attr(el, "class");
             if (cls.contains("loopLine") || cls.contains("loopText")
                     || cls.contains("labelBox") || cls.contains("note ")) {
-                return; // Overlays already present — don't double-inject
+                return; // Overlays already present â€” don't double-inject
             }
         }
 
@@ -2749,7 +2749,7 @@ public final class MermaidSvgFixup {
         List<Object[]> blockStack = new ArrayList<Object[]>();
 
         // Track activations
-        java.util.Map<String, Integer> activeActors = new java.util.LinkedHashMap<String, Integer>(); // actor→startMsgIdx
+        java.util.Map<String, Integer> activeActors = new java.util.LinkedHashMap<String, Integer>(); // actorâ†’startMsgIdx
 
         for (String srcLine : srcLines) {
             String trimLine = srcLine.trim();
@@ -3114,7 +3114,7 @@ public final class MermaidSvgFixup {
 
     /**
      * Extract the target actor name from a Mermaid sequence diagram message line.
-     * Handles patterns like: {@code Alice->>+Server: text} → "Server"
+     * Handles patterns like: {@code Alice->>+Server: text} â†’ "Server"
      */
     private static String extractTargetActor(String line) {
         // Remove activation markers from arrow
@@ -3130,9 +3130,9 @@ public final class MermaidSvgFixup {
         return null;
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Helpers
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static boolean isShapeTag(String localName) {
         return "rect".equals(localName) || "circle".equals(localName)
@@ -3158,3 +3158,4 @@ public final class MermaidSvgFixup {
         return sw.toString();
     }
 }
+

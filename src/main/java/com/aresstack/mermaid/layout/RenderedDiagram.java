@@ -146,6 +146,92 @@ public final class RenderedDiagram {
         return result;
     }
 
+    /**
+     * Find a node by its raw SVG element id (e.g. {@code "flowchart-A-0"}).
+     * This is the reverse of {@link DiagramNode#getSvgId()} and is needed
+     * when mapping a click on an SVG element back to a logical node.
+     *
+     * @param svgId the SVG id attribute value
+     * @return the node, or {@code null} if not found
+     */
+    public DiagramNode findNodeBySvgId(String svgId) {
+        if (svgId == null) return null;
+        for (DiagramNode n : nodes) {
+            if (svgId.equals(n.getSvgId())) return n;
+        }
+        return null;
+    }
+
+    /**
+     * Find an edge by its computed id (e.g. {@code "A->B"}).
+     *
+     * @param edgeId the edge id
+     * @return the edge, or {@code null} if not found
+     */
+    public DiagramEdge findEdgeById(String edgeId) {
+        if (edgeId == null) return null;
+        for (DiagramEdge e : edges) {
+            if (edgeId.equals(e.getId())) return e;
+        }
+        return null;
+    }
+
+    /**
+     * Collect all SVG element ids of nodes and edges — useful for
+     * programmatically walking the SVG DOM for highlighting.
+     *
+     * @return list of all SVG ids (nodes first, then edges)
+     */
+    public List<String> getAllSvgIds() {
+        List<String> ids = new ArrayList<String>();
+        for (DiagramNode n : nodes) {
+            if (n.getSvgId() != null && !n.getSvgId().isEmpty()) {
+                ids.add(n.getSvgId());
+            }
+        }
+        return ids;
+    }
+
+    // ── Typed finders ────────────────────────────────────────
+
+    /**
+     * Get all nodes of a specific subtype.
+     * <pre>
+     *   List&lt;ClassNode&gt; classes = diagram.getNodesOfType(ClassNode.class);
+     * </pre>
+     *
+     * @param type the node subclass to filter by
+     * @return matching nodes (may be empty, never null)
+     */
+    public <T extends DiagramNode> List<T> getNodesOfType(Class<T> type) {
+        List<T> result = new ArrayList<T>();
+        for (DiagramNode n : nodes) {
+            if (type.isInstance(n)) {
+                result.add(type.cast(n));
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Get all edges of a specific subtype.
+     * <pre>
+     *   List&lt;FlowchartEdge&gt; links = diagram.getEdgesOfType(FlowchartEdge.class);
+     * </pre>
+     *
+     * @param type the edge subclass to filter by
+     * @return matching edges (may be empty, never null)
+     */
+    public <T extends DiagramEdge> List<T> getEdgesOfType(Class<T> type) {
+        List<T> result = new ArrayList<T>();
+        for (DiagramEdge e : edges) {
+            if (type.isInstance(e)) {
+                result.add(type.cast(e));
+            }
+        }
+        return result;
+    }
+
     @Override
     public String toString() {
         return "RenderedDiagram{type='" + diagramType + "', nodes=" + nodes.size()

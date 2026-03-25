@@ -28,7 +28,7 @@ public final class MermaidRenderer {
     /**
      * Mermaid initialization config.  {@code htmlLabels: false} forces Mermaid
      * to use native SVG {@code <text>} elements instead of
-     * {@code <foreignObject>} with HTML — the headless browser shim cannot
+     * {@code <foreignObject>} with HTML â€” the headless browser shim cannot
      * properly serialize foreignObject content (innerHTML explosion).
      */
     private static final String MERMAID_INIT_CONFIG =
@@ -133,6 +133,23 @@ public final class MermaidRenderer {
     }
 
     /**
+     * Render a Mermaid diagram and extract layout metadata in one step.
+     * This is the preferred entry point for interactive editors that need
+     * both the SVG and the positions of nodes/edges for highlighting.
+     *
+     * @param diagramCode Mermaid definition, e.g. {@code "graph TD; A-->B;"}
+     * @return a {@link com.aresstack.mermaid.layout.RenderedDiagram} with SVG + layout,
+     *         or {@code null} if rendering failed
+     * @see com.aresstack.mermaid.layout.DiagramLayoutExtractor
+     * @see com.aresstack.mermaid.layout.SvgHighlighter
+     */
+    public com.aresstack.mermaid.layout.RenderedDiagram renderWithLayout(String diagramCode) {
+        String svg = renderToSvg(diagramCode);
+        if (svg == null) return null;
+        return com.aresstack.mermaid.layout.DiagramLayoutExtractor.extract(svg);
+    }
+
+    /**
      * Like {@link #renderToSvg(String)} but returns the full
      * {@link JsExecutionResult} so callers can inspect error details.
      */
@@ -195,7 +212,7 @@ public final class MermaidRenderer {
     static String postProcessSvg(String svg) {
         if (svg == null || svg.isEmpty()) return svg;
 
-        // 0) Extract only <svg>...</svg> — strip wrapper divs or trailing markup
+        // 0) Extract only <svg>...</svg> â€” strip wrapper divs or trailing markup
         //    (Mermaid 11 may emit <style> siblings after </svg>)
         int svgStart = svg.indexOf("<svg");
         int svgEnd = svg.lastIndexOf("</svg>");
@@ -227,9 +244,9 @@ public final class MermaidRenderer {
         svg = svg.replaceAll("translate\\(undefined[^)]*\\)", "translate(0, 0)");
         svg = svg.replaceAll("translate\\(NaN[^)]*\\)", "translate(0, 0)");
 
-        // 5) viewBox recalculation — handled by MermaidSvgFixup.fixViewBoxFromAttributes()
+        // 5) viewBox recalculation â€” handled by MermaidSvgFixup.fixViewBoxFromAttributes()
         //    which uses DOM-based scanning and is much more precise than regex scanning.
-        //    Do NOT run the regex-based fixViewBox here — it can produce wrong results
+        //    Do NOT run the regex-based fixViewBox here â€” it can produce wrong results
         //    by scanning coordinates inside <style>, <defs>, and marker elements.
 
         // 6) Replace width="100%" with a temporary pixel width
@@ -263,10 +280,10 @@ public final class MermaidRenderer {
                 "'trebuchet ms', verdana, arial, sans-serif");
         svg = svg.replaceAll("var\\(\\s*--[\\w-]+\\s*,\\s*([^)]+)\\)", "$1");
 
-        // 10ac) Fix fractional rgb() values: e.g. rgb(48.833, 0, 146.5) → hex
+        // 10ac) Fix fractional rgb() values: e.g. rgb(48.833, 0, 146.5) â†’ hex
         svg = fixFractionalRgbValues(svg);
 
-        // 10ad) Clean up empty/broken style attributes: style=";;;" → remove
+        // 10ad) Clean up empty/broken style attributes: style=";;;" â†’ remove
         svg = svg.replaceAll("\\s+style\\s*=\\s*\"[;\\s]*\"", "");
 
         // 10ae) Remove empty presentation attributes: font-weight="" / font-style=""
@@ -283,7 +300,7 @@ public final class MermaidRenderer {
         svg = svg.replaceAll(" style=\"function\\([^\"]*\"", " style=\"\"");
 
         // 10c) Sanitise CSS for Batik: strip @keyframes, animation, hsl(), rgba(),
-        //      stroke-linecap — these must be removed BEFORE CDATA wrapping
+        //      stroke-linecap â€” these must be removed BEFORE CDATA wrapping
         svg = sanitiseCssForBatik(svg);
 
         // 10cf) Replace "transparent" as paint value with "none" (Batik NPE)
@@ -349,7 +366,7 @@ public final class MermaidRenderer {
         svg = svg.replace("<clippath", "<clipPath");
         svg = svg.replace("</clippath>", "</clipPath>");
 
-        // 11) Fix HTML5 void elements that may remain (<br> → <br/>)
+        // 11) Fix HTML5 void elements that may remain (<br> â†’ <br/>)
         svg = fixHtmlVoidElements(svg);
 
         // 12) Wrap <style> content in CDATA so CSS selectors with > don't break XML
@@ -368,7 +385,7 @@ public final class MermaidRenderer {
         //      the text in SVG's painter's model.  Swap them so shapes paint first.
         svg = fixNodeShapeLabelOrder(svg);
 
-        // 12c) Fix <rect> elements without width/height — Batik requires these attributes.
+        // 12c) Fix <rect> elements without width/height â€” Batik requires these attributes.
         //      Mermaid with htmlLabels:false emits <rect class="background" style="stroke: none"/>
         //      which are decorative background rects with no dimensions.
         //      Remove them entirely (they're invisible anyway) or add default values.
@@ -393,7 +410,7 @@ public final class MermaidRenderer {
      * Remove any remaining {@code <foreignObject>} blocks and clean up
      * orphaned closing tags left behind from nested foreignObject structures.
      * <p>
-     * Mermaid 11 creates deeply nested {@code foreignObject → svg → g → ...}
+     * Mermaid 11 creates deeply nested {@code foreignObject â†’ svg â†’ g â†’ ...}
      * structures.  The non-greedy regex in {@link #convertForeignObjectsToText}
      * matches only the innermost level, leaving orphaned closing tags from
      * outer nesting layers.  This method does a thorough cleanup:
@@ -454,7 +471,7 @@ public final class MermaidRenderer {
 
         svg = rootOpening + inner;
 
-        // Balance orphaned </g> closing tags — the nested foreignObject/SVG
+        // Balance orphaned </g> closing tags â€” the nested foreignObject/SVG
         // removal may leave more </g> closings than <g> openings.
         svg = balanceGTags(svg);
 
@@ -503,7 +520,7 @@ public final class MermaidRenderer {
                     depth--;
                     result.append(svg, i, closeEnd);
                 }
-                // else: orphaned closing tag — silently skip it
+                // else: orphaned closing tag â€” silently skip it
                 i = closeEnd;
             }
             else {
@@ -526,7 +543,7 @@ public final class MermaidRenderer {
      */
     private static String removeStrayHtmlElements(String svg) {
         // Remove open and close tags but keep text content between them
-        // Note: <a> is intentionally excluded — SVG has its own <a> element
+        // Note: <a> is intentionally excluded â€” SVG has its own <a> element
         String htmlTags = "div|span|p|body|section|i|b|em|strong|h[1-6]|ul|ol|li|table|tr|td|th|label";
         svg = svg.replaceAll("<(" + htmlTags + ")(\\s[^>]*)?>", "");
         svg = svg.replaceAll("</(" + htmlTags + ")>", "");
@@ -571,9 +588,9 @@ public final class MermaidRenderer {
      * <p>
      * Batik cannot parse:
      * <ul>
-     *   <li>{@code @keyframes} blocks → NPE in CSSEngine.parseStyleSheet</li>
-     *   <li>{@code animation} property → references non-existent keyframes</li>
-     *   <li>{@code hsl()} / {@code rgba()} colour functions → unsupported</li>
+     *   <li>{@code @keyframes} blocks â†’ NPE in CSSEngine.parseStyleSheet</li>
+     *   <li>{@code animation} property â†’ references non-existent keyframes</li>
+     *   <li>{@code hsl()} / {@code rgba()} colour functions â†’ unsupported</li>
      *   <li>{@code stroke-linecap} in certain contexts</li>
      *   <li>Various HTML-only CSS properties ({@code position}, {@code z-index}, etc.)</li>
      * </ul>
@@ -611,7 +628,7 @@ public final class MermaidRenderer {
                 cssContent = cssContent.replace("<![CDATA[", "").replace("]]>", "");
             }
 
-            // ── Clean the CSS content ──
+            // â”€â”€ Clean the CSS content â”€â”€
 
             // 1) Remove @keyframes blocks (with nested braces)
             //    Must handle: @keyframes name { from { ... } to { ... } }
@@ -624,10 +641,10 @@ public final class MermaidRenderer {
             // 3) Remove stroke-linecap
             cssContent = cssContent.replaceAll("stroke-linecap\\s*:\\s*[^;}\"]+(;|(?=\\}))", "");
 
-            // 4) Convert hsl() → hex
+            // 4) Convert hsl() â†’ hex
             cssContent = MermaidSvgFixup.replaceHslValues(cssContent);
 
-            // 5) Convert rgba()/rgb() → hex
+            // 5) Convert rgba()/rgb() â†’ hex
             cssContent = MermaidSvgFixup.replaceRgbaValues(cssContent);
 
             // 6) Remove unsupported CSS properties
@@ -659,7 +676,7 @@ public final class MermaidRenderer {
             // 7) Replace currentColor with concrete value
             cssContent = cssContent.replace("currentColor", "#333333");
 
-            // 7b) Replace "transparent" paint value with "none" — Batik's CSS parser
+            // 7b) Replace "transparent" paint value with "none" â€” Batik's CSS parser
             //     throws NullPointerException when encountering "transparent" as a fill
             //     or stroke value (it's a CSS3 color, not SVG 1.1).
             cssContent = cssContent.replace("fill:transparent", "fill:none");
@@ -728,7 +745,7 @@ public final class MermaidRenderer {
             // Find the opening brace of the @keyframes block
             int braceStart = css.indexOf('{', kfIdx);
             if (braceStart < 0) {
-                // No opening brace found — keep the rest as-is
+                // No opening brace found â€” keep the rest as-is
                 sb.append(css, kfIdx, len);
                 break;
             }
@@ -821,7 +838,7 @@ public final class MermaidRenderer {
                 int outerGStart = outerIdx >= 0 ? nodeInner.lastIndexOf("<g ", outerIdx) : -1;
 
                 if (labelStart >= 0 && outerGStart >= 0 && labelStart < outerGStart) {
-                    // Label comes before outer-path — need to swap
+                    // Label comes before outer-path â€” need to swap
                     String labelGroup = extractGGroup(nodeInner, labelStart);
                     String outerGroup = extractGGroup(nodeInner, outerGStart);
 
@@ -908,7 +925,7 @@ public final class MermaidRenderer {
      * from Mermaid 11's DOM serialisation.
      * <p>
      * Mermaid creates {@code <foreignObject>} elements containing nested
-     * {@code <svg>} with their own {@code <g class="nodes">} block — each
+     * {@code <svg>} with their own {@code <g class="nodes">} block â€” each
      * such block contains copies of ALL node groups, not just the current
      * label.  After foreignObject removal and SVG flattening, these copies
      * end up as siblings at the root level, producing massive duplication.
@@ -949,7 +966,7 @@ public final class MermaidRenderer {
 
             String openTag = svg.substring(gStart, tagEnd + 1);
 
-            // Find the matching </g> — need to count nested <g> tags
+            // Find the matching </g> â€” need to count nested <g> tags
             int depth = 1;
             int scanPos = tagEnd + 1;
             while (scanPos < len && depth > 0) {
@@ -1000,7 +1017,7 @@ public final class MermaidRenderer {
             if (hasTransform || hasShapes || hasPolygon || hasPath || hasText) {
                 result.append(fullGroup);
             }
-            // else: duplicate — skip it
+            // else: duplicate â€” skip it
 
             i = scanPos;
         }
@@ -1090,7 +1107,7 @@ public final class MermaidRenderer {
      * strategy:
      * <ol>
      *   <li>First, look for {@code <span class="nodeLabel">text</span>} or
-     *       {@code <span class="edgeLabel">text</span>} — the actual label text</li>
+     *       {@code <span class="edgeLabel">text</span>} â€” the actual label text</li>
      *   <li>If not found, strip all HTML/XML tags and use the plain text</li>
      *   <li>If the result is too long or contains CSS, discard the foreignObject</li>
      * </ol>
@@ -1135,7 +1152,7 @@ public final class MermaidRenderer {
             // SVGs with <style> blocks.  The stripped "text" then contains the
             // full CSS, which is useless as a label.  Detect and skip.
             if (text.length() > 200 || text.contains("{font-family:") || text.startsWith("#mmd-")) {
-                // CSS or other non-label content — just remove the foreignObject
+                // CSS or other non-label content â€” just remove the foreignObject
                 matcher.appendReplacement(sb, "");
                 continue;
             }
@@ -1216,7 +1233,7 @@ public final class MermaidRenderer {
                         // (Element.prototype with proper getters, createNodeIterator, etc.)
                         // that our headless browser shim cannot provide.  Replace the DOMPurify
                         // instance with a pass-through sanitizer.  This is safe because we
-                        // control the diagram input — there is no user-supplied untrusted HTML.
+                        // control the diagram input â€” there is no user-supplied untrusted HTML.
                         mermaidBundle = mermaidBundle.replace(
                                 "tl=nW()",
                                 "tl={sanitize:function(t){return typeof t==='string'?t:''},isSupported:true,removed:[],version:'3.3.3'}");
@@ -1257,4 +1274,5 @@ public final class MermaidRenderer {
         }
     }
 }
+
 

@@ -19,9 +19,9 @@ import static org.junit.jupiter.api.Assertions.*;
  * <p>
  * The browser shim must correctly handle:
  * <ol>
- *   <li>{@code :not()} CSS pseudo-selector — required for Mermaid's ER column positioning</li>
- *   <li>{@code <rect>} without width/height → 0×0 bbox (not 20×20 fallback)</li>
- *   <li>{@code <text>}/{@code <tspan>} with empty content → 0×0 bbox</li>
+ *   <li>{@code :not()} CSS pseudo-selector â€” required for Mermaid's ER column positioning</li>
+ *   <li>{@code <rect>} without width/height â†’ 0Ã—0 bbox (not 20Ã—20 fallback)</li>
+ *   <li>{@code <text>}/{@code <tspan>} with empty content â†’ 0Ã—0 bbox</li>
  * </ol>
  */
 class ErLayoutTest {
@@ -106,7 +106,8 @@ class ErLayoutTest {
 
         assertNotEquals(typeX, nameX,
                 "attribute-type (x=" + typeX + ") and attribute-name (x=" + nameX
-                + ") must have DIFFERENT x positions — columns must not overlap");
+                + ") must have DIFFERENT x positions â€” columns must not overlap");
     }
 }
+
 

@@ -24,7 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Interactive visual test tool for Mermaid → SVG → BufferedImage rendering.
+ * Interactive visual test tool for Mermaid â†’ SVG â†’ BufferedImage rendering.
  * <p>
  * Each test case is a focused micro-test with:
  * <ol>
@@ -100,9 +100,9 @@ public final class MermaidRenderTest {
         return r < 250 || g < 250 || b < 250; // not near-white
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Data model — serialised to JSON
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Data model â€” serialised to JSON
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     /** JSON-serialisable result for one visual test case. */
     public static final class TestCaseResult {
@@ -112,7 +112,7 @@ public final class MermaidRenderTest {
         public String mermaidCode;
         /** Free-text annotation from the tester (guidance for the AI) */
         public String annotation;
-        /** Map of question-id → "YES" / "NO" / "PARTIAL" */
+        /** Map of question-id â†’ "YES" / "NO" / "PARTIAL" */
         public Map<String, String> questionAnswers;
         /** true if SVG rendering itself failed */
         public boolean renderError;
@@ -120,9 +120,9 @@ public final class MermaidRenderTest {
         public boolean rasterError;
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Internal specs + rendered holder
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static final class DiagramSpec {
         final String id, title, expectedDescription, mermaidCode;
@@ -158,18 +158,18 @@ public final class MermaidRenderTest {
         }
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  Test-case catalogue — focused micro-tests
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  Test-case catalogue â€” focused micro-tests
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static List<DiagramSpec> buildSpecs() {
         List<DiagramSpec> s = new ArrayList<DiagramSpec>();
 
-        // ═══════════════════════════════════════════════════════
-        //  RUNDE 6 — Komplexe Diagramme
-        // ═══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+        //  RUNDE 6 â€” Komplexe Diagramme
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
-        // 1 — Pizzabestellung: Komplexer Entscheidungsfluss mit vielen Knotentypen
+        // 1 â€” Pizzabestellung: Komplexer Entscheidungsfluss mit vielen Knotentypen
         s.add(new DiagramSpec("pizza-flow",
                 "1 \u2014 Pizzabestellung",
                 "Ein Flussdiagramm von oben nach unten:\n"
@@ -197,7 +197,7 @@ public final class MermaidRenderTest {
                         {"no-overlap", "Sind Knoten und Labels \u00fcberschneidungsfrei lesbar?"}
                 }));
 
-        // 2 — B\u00fcro-Meeting: Sequenzdiagramm mit Loop, Alt und Note
+        // 2 â€” B\u00fcro-Meeting: Sequenzdiagramm mit Loop, Alt und Note
         s.add(new DiagramSpec("meeting-seq",
                 "2 \u2014 B\u00fcro-Meeting (Sequenz)",
                 "Drei Akteure: \"Chef\", \"Alice\", \"Bob\" (in dieser Reihenfolge von links nach rechts).\n"
@@ -227,7 +227,7 @@ public final class MermaidRenderTest {
                         {"lifelines-ok", "Reichen die Lebenslinien bis zu den unteren Actor-Boxen?"}
                 }));
 
-        // 3 — Verschachtelte Subgraphs: Subgraph in Subgraph
+        // 3 â€” Verschachtelte Subgraphs: Subgraph in Subgraph
         s.add(new DiagramSpec("nested-sub",
                 "3 \u2014 Verschachtelte Teams",
                 "Drei verschachtelte Ebenen:\n"
@@ -256,7 +256,7 @@ public final class MermaidRenderTest {
                         {"cross-link", "Gibt es eine sichtbare Verbindung von Tom zu Lisa (zwischen Dev und Ops)?"}
                 }));
 
-        // 4 — Viele Pfeiltypen: durchgezogen, gestrichelt, dick, mit/ohne Label
+        // 4 â€” Viele Pfeiltypen: durchgezogen, gestrichelt, dick, mit/ohne Label
         s.add(new DiagramSpec("arrow-types",
                 "4 \u2014 Pfeiltypen-Sammlung",
                 "Sechs Knoten in zwei Spalten (links A-C, rechts D-F):\n"
@@ -276,7 +276,7 @@ public final class MermaidRenderTest {
                         {"six-nodes", "Sind alle 6 Knoten-Texte (Alpha, Beta, Gamma, Delta, Echo, Foxtrot) lesbar?"}
                 }));
 
-        // 5 — Gro\u00dfer Flowchart mit vielen Knotenformen
+        // 5 â€” Gro\u00dfer Flowchart mit vielen Knotenformen
         s.add(new DiagramSpec("shape-zoo",
                 "5 \u2014 Formen-Zoo",
                 "Ein Diagramm mit 6 verschiedenen Knotenformen, alle mit Namen beschriftet:\n"
@@ -303,7 +303,7 @@ public final class MermaidRenderTest {
                         {"all-connected", "Sind alle 6 Formen durch Pfeile verbunden?"}
                 }));
 
-        // 6 — Komplexe Sequenz: Activation Boxes + Parallele Nachrichten
+        // 6 â€” Komplexe Sequenz: Activation Boxes + Parallele Nachrichten
         s.add(new DiagramSpec("seq-activate",
                 "6 \u2014 Server-Anfrage (Sequenz mit Aktivierung)",
                 "Drei Akteure: \"Browser\", \"Server\", \"DB\".\n"
@@ -327,7 +327,7 @@ public final class MermaidRenderTest {
                         {"lifelines-ok", "Reichen die Lebenslinien bis zu den unteren Actor-Boxen?"}
                 }));
 
-        // 7 — Bottom-Up Flowchart mit R\u00fcckw\u00e4rtspfeil (Zyklus)
+        // 7 â€” Bottom-Up Flowchart mit R\u00fcckw\u00e4rtspfeil (Zyklus)
         s.add(new DiagramSpec("cycle-flow",
                 "7 \u2014 Endlosschleife (Zyklus)",
                 "Ein Bottom-Up-Flowchart (BT = unten nach oben):\n"
@@ -348,7 +348,7 @@ public final class MermaidRenderTest {
                         {"no-overlap", "Sind alle Knoten und Pfeile \u00fcberschneidungsfrei lesbar?"}
                 }));
 
-        // 8 — Sequenzdiagramm mit Alt-Block (if/else)
+        // 8 â€” Sequenzdiagramm mit Alt-Block (if/else)
         s.add(new DiagramSpec("seq-alt",
                 "8 \u2014 Wetter-Check (Sequenz mit Alt)",
                 "Zwei Akteure: \"Mensch\" und \"App\".\n"
@@ -375,7 +375,7 @@ public final class MermaidRenderTest {
                         {"lifelines-ok", "Reichen die Lebenslinien bis zu den unteren Actor-Boxen?"}
                 }));
 
-        // 9 — Mindmap: Humus
+        // 9 â€” Mindmap: Humus
         s.add(new DiagramSpec("mindmap-humus",
                 "9 \u2014 Mindmap: Humus",
                 "Eine Mindmap mit zentralem Knoten \"Humus\" (doppelt umrundet = Kreis).\n"
@@ -445,9 +445,9 @@ public final class MermaidRenderTest {
         return s;
     }
 
-    // ═══════════════════════════════════════════════════════════
-    //  main — render, then show UI
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+    //  main â€” render, then show UI
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     public static void main(String[] args) throws Exception {
         System.err.println("[MermaidRenderTest] Initialising renderer...");
@@ -481,8 +481,8 @@ public final class MermaidRenderTest {
             byte[] svgBytes = svg.getBytes("UTF-8");
 
             // MermaidSvgFixup.setDimensions() already set width/height on the
-            // SVG root so the larger dimension ≈ 2000px.  Batik renders at
-            // these intrinsic dimensions → crisp, properly-sized image.
+            // SVG root so the larger dimension â‰ˆ 2000px.  Batik renders at
+            // these intrinsic dimensions â†’ crisp, properly-sized image.
             BufferedImage img = SvgRenderer.renderToBufferedImage(svgBytes);
             // Auto-crop residual whitespace
             img = autoCrop(img);
@@ -495,9 +495,9 @@ public final class MermaidRenderTest {
         });
     }
 
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
     //  Swing dialog
-    // ═══════════════════════════════════════════════════════════
+    // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
 
     private static void showDialog(final List<RenderedCase> cases) {
         final JFrame frame = new JFrame("Mermaid Render Test");
@@ -515,9 +515,9 @@ public final class MermaidRenderTest {
             Arrays.fill(questionAnswers[i], "");
         }
 
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  TOP BAR: countdown + submit
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         JPanel topBar = new JPanel(new BorderLayout(12, 0));
         topBar.setBorder(BorderFactory.createCompoundBorder(
                 BorderFactory.createMatteBorder(0, 0, 2, 0, Color.DARK_GRAY),
@@ -543,7 +543,7 @@ public final class MermaidRenderTest {
 
         frame.add(topBar, BorderLayout.NORTH);
 
-        // ── Helper: check if all questions answered ──
+        // â”€â”€ Helper: check if all questions answered â”€â”€
         final Runnable updateSubmitState = new Runnable() {
             @Override public void run() {
                 int total = 0, answered = 0;
@@ -565,9 +565,9 @@ public final class MermaidRenderTest {
             }
         };
 
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  CENTER: horizontal row of test cards
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         JPanel cardRow = new JPanel();
         cardRow.setLayout(new BoxLayout(cardRow, BoxLayout.X_AXIS));
         cardRow.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
@@ -587,7 +587,7 @@ public final class MermaidRenderTest {
                     BorderFactory.createEmptyBorder(6, 8, 8, 8)));
             card.setBackground(Color.WHITE);
 
-            // ── Expected description (above image) ──
+            // â”€â”€ Expected description (above image) â”€â”€
             JTextArea descArea = new JTextArea("ERWARTET:\n" + rc.spec.expectedDescription);
             descArea.setEditable(false);
             descArea.setLineWrap(true);
@@ -602,15 +602,15 @@ public final class MermaidRenderTest {
             card.add(descArea);
             card.add(Box.createVerticalStrut(4));
 
-            // ── Rendered image — zoomable + pannable with dynamic SVG re-rendering ──
+            // â”€â”€ Rendered image â€” zoomable + pannable with dynamic SVG re-rendering â”€â”€
             JPanel imgContainer;
             if (rc.image != null) {
-                // Base dimensions (from initial render) — used as the
+                // Base dimensions (from initial render) â€” used as the
                 // stable reference frame for zoom/pan calculations.
                 final int baseW = rc.image.getWidth();
                 final int baseH = rc.image.getHeight();
 
-                // Mutable image holder — replaced when SVG is re-rendered
+                // Mutable image holder â€” replaced when SVG is re-rendered
                 // at higher resolution for crisp zoom.
                 final BufferedImage[] currentImg = {rc.image};
 
@@ -633,7 +633,7 @@ public final class MermaidRenderTest {
                         Graphics2D g2 = (Graphics2D) g.create();
                         g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
                                 RenderingHints.VALUE_INTERPOLATION_BILINEAR);
-                        // Display size is ALWAYS baseSize * zoom — this stays
+                        // Display size is ALWAYS baseSize * zoom â€” this stays
                         // visually stable even when currentImg is swapped for a
                         // higher-resolution render.
                         int dw = (int) Math.round(baseW * zoom[0]);
@@ -646,7 +646,7 @@ public final class MermaidRenderTest {
                 };
                 zoomPanel.setBackground(Color.WHITE);
 
-                // ── Dynamic SVG re-rendering on zoom ──
+                // â”€â”€ Dynamic SVG re-rendering on zoom â”€â”€
                 // When the user zooms in far enough that the cached raster
                 // image would be visibly upscaled, we re-render the SVG at
                 // the needed resolution via Batik.  A debounce timer avoids
@@ -815,7 +815,7 @@ public final class MermaidRenderTest {
             card.add(imgContainer);
             card.add(Box.createVerticalStrut(4));
 
-            // ── Annotation text area (for user guidance) ──
+            // â”€â”€ Annotation text area (for user guidance) â”€â”€
             JTextArea annotArea = new JTextArea(2, 30);
             annotArea.setLineWrap(true);
             annotArea.setWrapStyleWord(true);
@@ -831,7 +831,7 @@ public final class MermaidRenderTest {
             card.add(annotScroll);
             card.add(Box.createVerticalStrut(4));
 
-            // ── Questions with YES/NO/PARTIAL buttons ──
+            // â”€â”€ Questions with YES/NO/PARTIAL buttons â”€â”€
             JPanel questionsPanel = new JPanel();
             questionsPanel.setLayout(new BoxLayout(questionsPanel, BoxLayout.Y_AXIS));
             questionsPanel.setBackground(new Color(240, 245, 255));
@@ -908,7 +908,7 @@ public final class MermaidRenderTest {
             questionsPanel.setMaximumSize(new Dimension(Integer.MAX_VALUE, 50 * rc.spec.questions.size() + 40));
             card.add(questionsPanel);
 
-            // Fixed card width — sized for 5120×1440 ultrawide
+            // Fixed card width â€” sized for 5120Ã—1440 ultrawide
             card.setPreferredSize(new Dimension(600, 1300));
             card.setMinimumSize(new Dimension(500, 1000));
             card.setMaximumSize(new Dimension(640, 1400));
@@ -926,9 +926,9 @@ public final class MermaidRenderTest {
         hScroll.getVerticalScrollBar().setUnitIncrement(20);
         frame.add(hScroll, BorderLayout.CENTER);
 
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  Submit action
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         submitBtn.addActionListener(new ActionListener() {
             @Override public void actionPerformed(ActionEvent e) {
                 // Validate all questions answered
@@ -986,9 +986,9 @@ public final class MermaidRenderTest {
             }
         });
 
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  Countdown timer
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         final int[] remaining = {COUNTDOWN_SECONDS};
         final Timer timer = new Timer(1000, null);
         timer.addActionListener(new ActionListener() {
@@ -1017,9 +1017,9 @@ public final class MermaidRenderTest {
             }
         });
 
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         //  Show maximised
-        // ══════════════════════════════════════════════════════
+        // â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
         frame.pack();
         frame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         frame.setVisible(true);
@@ -1048,3 +1048,5 @@ public final class MermaidRenderTest {
         return String.format("  %02d:%02d  ", m, s);
     }
 }
+
+

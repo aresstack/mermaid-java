@@ -59,8 +59,12 @@ public final class DiagramLayoutExtractor {
     /** ER entity node id: {@code entity-EntityName} or {@code entity-EntityName-123} */
     private static final Pattern ENTITY_ID = Pattern.compile("^entity-(.+?)(?:-\\d+)?$");
 
-    /** Edge path id: {@code L-Source-Target-0} */
-    private static final Pattern EDGE_PATH_ID = Pattern.compile("^L-(.+?)-(.+?)(?:-\\d+)?$");
+    /** Edge path id: {@code L-Source-Target-0} or {@code L_Source_Target_0} (Mermaid 11+) */
+    private static final Pattern EDGE_PATH_ID = Pattern.compile("^L[-_](.+?)[-_](.+?)(?:[-_]\\d+)?$");
+
+    /** Class diagram edge id: {@code id_Source_Target_N} (Mermaid 11+).
+     *  Captures the combined source_target part and the trailing index. */
+    private static final Pattern CLASS_EDGE_ID = Pattern.compile("^id_(.+)_(\\d+)$");
 
     /** State diagram node id: {@code state-StateName-123} */
     private static final Pattern STATE_ID = Pattern.compile("^state-(.+?)(?:-\\d+)?$");
@@ -96,9 +100,12 @@ public final class DiagramLayoutExtractor {
             if ("sequence".equals(diagramType)) {
                 nodes = extractSequenceActors(doc);
                 edges = extractSequenceMessages(doc, nodes);
+                // Also extract combined fragments (loop, alt, opt, etc.)
+                List<DiagramNode> fragments = extractSequenceFragments(doc);
+                nodes.addAll(fragments);
             } else {
                 nodes = extractNodes(doc);
-                edges = extractEdges(doc, nodes);
+                edges = extractEdges(doc, nodes, diagramType);
             }
 
             return new RenderedDiagram(svg, diagramType, nodes, edges,
@@ -255,12 +262,209 @@ public final class DiagramLayoutExtractor {
         }
 
         String label = extractTextContent(g);
+        double nx = cx - hw, ny = cy - hh, nw = hw * 2, nh = hh * 2;
 
-        return new DiagramNode(
-                logicalId, label, kind,
-                cx - hw, cy - hh, hw * 2, hh * 2,
-                svgId
-        );
+        // ── Create typed subclass based on kind ──
+        if ("node".equals(kind)) {
+            NodeShape shape = detectNodeShape(g);
+            return new FlowchartNode(logicalId, label, nx, ny, nw, nh, svgId, shape);
+        }
+        if ("class".equals(kind)) {
+            return extractClassNode(g, logicalId, label, nx, ny, nw, nh, svgId);
+        }
+        if ("entity".equals(kind)) {
+            return extractErEntityNode(g, logicalId, label, nx, ny, nw, nh, svgId);
+        }
+        if ("state".equals(kind)) {
+            boolean isStart = label.contains("[*]") || svgId.contains("root_start")
+                    || svgId.contains("-start-");
+            boolean isEnd = svgId.contains("root_end") || svgId.contains("-end-");
+            return new StateDiagramNode(logicalId, label, nx, ny, nw, nh, svgId,
+                    isStart, isEnd, false);
+        }
+        if ("requirement".equals(kind)) {
+            return new RequirementItemNode(logicalId, label, nx, ny, nw, nh, svgId,
+                    RequirementItemNode.ReqNodeType.REQUIREMENT, "", "", "");
+        }
+
+        // Fallback: plain DiagramNode
+        return new DiagramNode(logicalId, label, kind, nx, ny, nw, nh, svgId);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Shape detection for flowchart nodes
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Detect the visual shape of a flowchart node from its SVG child elements.
+     */
+    private static NodeShape detectNodeShape(Element g) {
+        NodeList children = g.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (!(child instanceof Element)) continue;
+            Element el = (Element) child;
+            String tag = el.getLocalName();
+
+            if ("circle".equals(tag)) {
+                return NodeShape.CIRCLE;
+            }
+            if ("rect".equals(tag)) {
+                double w = parseDoubleAttr(el, "width", 0);
+                double h = parseDoubleAttr(el, "height", 0);
+                double rx = parseDoubleAttr(el, "rx", 0);
+                double ry = parseDoubleAttr(el, "ry", 0);
+                if (rx > 0 || ry > 0) {
+                    // Stadium: rx is very large relative to height
+                    if (rx >= h / 2.5 || ry >= h / 2.5) {
+                        return NodeShape.STADIUM;
+                    }
+                    return NodeShape.ROUND_RECT;
+                }
+                // Check for cylinder (has a second rect or specific class)
+                String rectCls = attr(el, "class");
+                if (rectCls.contains("label-container")) {
+                    return NodeShape.RECTANGLE;
+                }
+                return NodeShape.RECTANGLE;
+            }
+            if ("polygon".equals(tag)) {
+                String points = el.getAttribute("points");
+                if (points != null && !points.isEmpty()) {
+                    int pointCount = countPolygonPoints(points);
+                    if (pointCount == 4) {
+                        // Diamond or trapezoid — check if it's rotated 45°
+                        if (isDiamondShape(points)) {
+                            return NodeShape.DIAMOND;
+                        }
+                        return NodeShape.TRAPEZOID;
+                    }
+                    if (pointCount >= 6) {
+                        return NodeShape.HEXAGON;
+                    }
+                }
+                return NodeShape.DIAMOND; // fallback for polygons
+            }
+            if ("path".equals(tag)) {
+                // Paths are used for stadium, cylinder, asymmetric, etc.
+                String d = el.getAttribute("d");
+                if (d != null) {
+                    // Cylinder typically has arcs (A commands)
+                    if (d.contains("A") || d.contains("a")) {
+                        return NodeShape.CYLINDER;
+                    }
+                }
+                return NodeShape.STADIUM; // common fallback for path-based shapes
+            }
+            if ("g".equals(tag)) {
+                // Recurse into child groups
+                NodeShape inner = detectNodeShape(el);
+                if (inner != NodeShape.RECTANGLE) return inner;
+            }
+        }
+        return NodeShape.RECTANGLE;
+    }
+
+    private static int countPolygonPoints(String points) {
+        String[] parts = points.trim().split("[\\s,]+");
+        return parts.length / 2;
+    }
+
+    private static boolean isDiamondShape(String points) {
+        String[] parts = points.trim().split("[\\s,]+");
+        if (parts.length < 8) return false;
+        try {
+            double[] xs = new double[4];
+            double[] ys = new double[4];
+            for (int i = 0; i < 4; i++) {
+                xs[i] = Double.parseDouble(parts[i * 2]);
+                ys[i] = Double.parseDouble(parts[i * 2 + 1]);
+            }
+            // Diamond: center point should be equidistant from all vertices
+            double cx = (xs[0] + xs[1] + xs[2] + xs[3]) / 4;
+            double cy = (ys[0] + ys[1] + ys[2] + ys[3]) / 4;
+            // Check if points alternate between top/bottom and left/right
+            // A diamond has vertices at top, right, bottom, left
+            double minX = Math.min(Math.min(xs[0], xs[1]), Math.min(xs[2], xs[3]));
+            double maxX = Math.max(Math.max(xs[0], xs[1]), Math.max(xs[2], xs[3]));
+            double minY = Math.min(Math.min(ys[0], ys[1]), Math.min(ys[2], ys[3]));
+            double maxY = Math.max(Math.max(ys[0], ys[1]), Math.max(ys[2], ys[3]));
+            double w = maxX - minX;
+            double h = maxY - minY;
+            // Diamond: aspect ratio is roughly square and each vertex is near an edge center
+            if (w > 0 && h > 0 && Math.abs(w / h - 1.0) < 1.5) {
+                return true;
+            }
+        } catch (NumberFormatException ignored) {}
+        return false;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  Class diagram node extraction (fields + methods)
+    // ═══════════════════════════════════════════════════════════
+
+    private static ClassNode extractClassNode(Element g, String logicalId, String fullLabel,
+                                               double x, double y, double w, double h,
+                                               String svgId) {
+        // The class box text contains: ClassName, optional <<stereotype>>, then members
+        String allText = fullLabel;
+        String stereotype = "";
+        java.util.List<ClassMember> members = new java.util.ArrayList<ClassMember>();
+
+        // Try to extract individual text lines from <text> elements
+        NodeList texts = g.getElementsByTagNameNS("*", "text");
+        java.util.List<String> lines = new java.util.ArrayList<String>();
+        for (int i = 0; i < texts.getLength(); i++) {
+            String content = texts.item(i).getTextContent();
+            if (content != null && !content.trim().isEmpty()) {
+                lines.add(content.trim());
+            }
+        }
+
+        // Parse stereotype and members from text lines
+        for (String line : lines) {
+            if (line.startsWith("<<") && line.endsWith(">>")) {
+                stereotype = line.substring(2, line.length() - 2).trim();
+            } else if (line.equals(logicalId)) {
+                // Skip the class name itself
+                continue;
+            } else if (line.contains("(") || line.startsWith("+") || line.startsWith("-")
+                    || line.startsWith("#") || line.startsWith("~")) {
+                members.add(ClassMember.parse(line));
+            } else if (!line.isEmpty() && !line.equals(fullLabel)) {
+                // Could be a field without visibility prefix
+                members.add(ClassMember.parse(line));
+            }
+        }
+
+        return new ClassNode(logicalId, logicalId, x, y, w, h, svgId, stereotype, members);
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  ER entity node extraction (attributes)
+    // ═══════════════════════════════════════════════════════════
+
+    private static ErEntityNode extractErEntityNode(Element g, String logicalId, String fullLabel,
+                                                     double x, double y, double w, double h,
+                                                     String svgId) {
+        java.util.List<ErAttribute> attributes = new java.util.ArrayList<ErAttribute>();
+
+        // Extract text lines from entity box
+        NodeList texts = g.getElementsByTagNameNS("*", "text");
+        for (int i = 0; i < texts.getLength(); i++) {
+            String content = texts.item(i).getTextContent();
+            if (content == null) continue;
+            String line = content.trim();
+            // Skip the entity name line
+            if (line.equals(logicalId) || line.isEmpty()) continue;
+            // Try to parse as attribute: "type name [PK|FK]"
+            ErAttribute attr = ErAttribute.parse(line);
+            if (attr != null && !attr.getName().isEmpty()) {
+                attributes.add(attr);
+            }
+        }
+
+        return new ErEntityNode(logicalId, logicalId, x, y, w, h, svgId, attributes);
     }
 
     private static DiagramNode extractMindmapNode(Element g, String svgId, int index) {
@@ -276,10 +480,26 @@ public final class DiagramLayoutExtractor {
         String label = extractTextContent(g);
         String logicalId = label.isEmpty() ? ("mindmap-" + index) : label;
 
-        return new DiagramNode(
-                logicalId, label, "mindmap-node",
+        // Estimate depth from CSS class — Mermaid adds "section-N" or "level-N" classes,
+        // or by checking the SVG section-depth attribute.
+        // Fallback: first node is root (depth 0), subsequent nodes start at depth 1.
+        int depth = 0;
+        String cls = attr(g, "class");
+
+        // Mermaid 11 uses class like "mindmap-node section-0" etc.
+        java.util.regex.Matcher secMatcher = java.util.regex.Pattern.compile(
+                "section-(\\d+)").matcher(cls);
+        if (secMatcher.find()) {
+            depth = Integer.parseInt(secMatcher.group(1));
+        } else {
+            // Fallback: first is root, rest estimate from position in DOM
+            depth = (index == 0) ? 0 : 1;
+        }
+
+        return new MindmapItemNode(
+                logicalId, label,
                 cx - hw, cy - hh, hw * 2, hh * 2,
-                svgId
+                svgId, depth
         );
     }
 
@@ -294,6 +514,12 @@ public final class DiagramLayoutExtractor {
         // We group by name to get one DiagramNode per actor
         Map<String, double[]> actorBounds = new LinkedHashMap<String, double[]>();
 
+        // Detect actor type: check if there are <image> or person-shaped <path> elements
+        // that indicate "actor" (stick figure) vs. "participant" (box)
+        boolean hasStickFigures = false;
+        NodeList images = doc.getElementsByTagNameNS("*", "image");
+        if (images.getLength() > 0) hasStickFigures = true;
+
         NodeList rects = doc.getElementsByTagNameNS("*", "rect");
         for (int i = 0; i < rects.getLength(); i++) {
             Node n = rects.item(i);
@@ -304,23 +530,34 @@ public final class DiagramLayoutExtractor {
             String name = attr(rect, "name");
             if (name.isEmpty()) continue;
 
-            double x = parseDoubleAttr(rect, "x", 0);
-            double y = parseDoubleAttr(rect, "y", 0);
-            double w = parseDoubleAttr(rect, "width", 150);
-            double h = parseDoubleAttr(rect, "height", 65);
+            double rx = parseDoubleAttr(rect, "x", 0);
+            double ry = parseDoubleAttr(rect, "y", 0);
+            double rw = parseDoubleAttr(rect, "width", 150);
+            double rh = parseDoubleAttr(rect, "height", 65);
 
             if (!actorBounds.containsKey(name)) {
-                actorBounds.put(name, new double[]{x, y, w, h});
+                // Store as [minX, minY, maxX, maxY] for easier merging
+                actorBounds.put(name, new double[]{rx, ry, rx + rw, ry + rh});
+            } else {
+                // Merge: expand bounding box to encompass this rect too
+                // (covers both top and bottom actor boxes + lifeline)
+                double[] prev = actorBounds.get(name);
+                prev[0] = Math.min(prev[0], rx);           // minX
+                prev[1] = Math.min(prev[1], ry);           // minY
+                prev[2] = Math.max(prev[2], rx + rw);      // maxX
+                prev[3] = Math.max(prev[3], ry + rh);      // maxY
             }
-            // Merge top & bottom actor boxes
         }
 
         for (Map.Entry<String, double[]> entry : actorBounds.entrySet()) {
-            double[] b = entry.getValue();
-            result.add(new DiagramNode(
-                    entry.getKey(), entry.getKey(), "actor",
-                    b[0], b[1], b[2], b[3],
-                    "actor-" + entry.getKey()
+            double[] b = entry.getValue(); // [minX, minY, maxX, maxY]
+            double ax = b[0], ay = b[1], aw = b[2] - b[0], ah = b[3] - b[1];
+            result.add(new SequenceActorNode(
+                    entry.getKey(), entry.getKey(),
+                    ax, ay, aw, ah,
+                    "actor-" + entry.getKey(),
+                    hasStickFigures ? SequenceActorNode.ActorType.ACTOR
+                                    : SequenceActorNode.ActorType.PARTICIPANT
             ));
         }
         return result;
@@ -354,7 +591,8 @@ public final class DiagramLayoutExtractor {
             Node n = lines.item(i);
             if (!(n instanceof Element)) continue;
             Element line = (Element) n;
-            if (!attr(line, "class").contains("messageLine")) continue;
+            String lineCls = attr(line, "class");
+            if (!lineCls.contains("messageLine")) continue;
 
             double x1 = parseDoubleAttr(line, "x1", 0);
             double y1 = parseDoubleAttr(line, "y1", 0);
@@ -373,10 +611,14 @@ public final class DiagramLayoutExtractor {
             double bw = Math.abs(x2 - x1);
             double bh = Math.max(Math.abs(y2 - y1), 2);
 
-            result.add(new DiagramEdge(
+            // Detect message type from CSS class
+            MessageType msgType = MessageType.fromCssClass(lineCls);
+
+            result.add(new SequenceMessage(
                     edgeId, sourceId, targetId, label,
-                    "messageLine", null,
-                    bx, by, bw, bh
+                    null,
+                    bx, by, bw, bh,
+                    msgType, false, false
             ));
             msgIdx++;
         }
@@ -397,10 +639,99 @@ public final class DiagramLayoutExtractor {
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  Sequence diagram fragment extraction (loop, alt, opt…)
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Extract combined fragments (loop, alt, opt, par, critical, break, rect)
+     * from a sequence diagram SVG.
+     *
+     * <p>Mermaid renders these as {@code <rect class="loopLine">} rectangles
+     * paired with {@code <text class="loopText">} labels inside a parent
+     * {@code <g>} group.
+     */
+    private static List<DiagramNode> extractSequenceFragments(Document doc) {
+        List<DiagramNode> result = new ArrayList<DiagramNode>();
+
+        NodeList rects = doc.getElementsByTagNameNS("*", "rect");
+        for (int i = 0; i < rects.getLength(); i++) {
+            Node n = rects.item(i);
+            if (!(n instanceof Element)) continue;
+            Element rect = (Element) n;
+            String cls = attr(rect, "class");
+            if (!cls.contains("loopLine")) continue;
+
+            double rx = parseDoubleAttr(rect, "x", 0);
+            double ry = parseDoubleAttr(rect, "y", 0);
+            double rw = parseDoubleAttr(rect, "width", 0);
+            double rh = parseDoubleAttr(rect, "height", 0);
+            if (rw < 1 || rh < 1) continue;
+
+            // Walk up to the parent <g> and find sibling <text class="loopText"> elements
+            String fragmentKeyword = "";
+            String fragmentCondition = "";
+            Node parent = rect.getParentNode();
+            if (parent instanceof Element) {
+                Element pg = (Element) parent;
+                NodeList texts = pg.getElementsByTagNameNS("*", "text");
+                for (int t = 0; t < texts.getLength(); t++) {
+                    Element txt = (Element) texts.item(t);
+                    String txtCls = attr(txt, "class");
+                    if (!txtCls.contains("loopText")) continue;
+                    String content = txt.getTextContent();
+                    if (content == null) continue;
+                    content = content.trim();
+                    if (content.isEmpty()) continue;
+
+                    // First loopText is typically the keyword (loop, alt, opt…)
+                    // Second loopText (if any) is the condition
+                    if (fragmentKeyword.isEmpty()) {
+                        // Sometimes keyword and condition are in one text node: "loop Diskussion"
+                        // or just "loop" with condition in brackets as separate text
+                        String lower = content.toLowerCase();
+                        if (lower.startsWith("loop") || lower.startsWith("alt") || lower.startsWith("opt")
+                                || lower.startsWith("par") || lower.startsWith("critical")
+                                || lower.startsWith("break") || lower.startsWith("rect")
+                                || lower.startsWith("else")) {
+                            // Split keyword from condition
+                            int spaceIdx = content.indexOf(' ');
+                            if (spaceIdx > 0) {
+                                fragmentKeyword = content.substring(0, spaceIdx);
+                                fragmentCondition = content.substring(spaceIdx + 1).trim();
+                            } else {
+                                fragmentKeyword = content;
+                            }
+                        } else {
+                            // Might be a condition in brackets like "[Diskussion]"
+                            fragmentCondition = content.replace("[", "").replace("]", "").trim();
+                        }
+                    } else if (fragmentCondition.isEmpty()) {
+                        fragmentCondition = content.replace("[", "").replace("]", "").trim();
+                    }
+                }
+            }
+
+            if (fragmentKeyword.isEmpty()) fragmentKeyword = "loop"; // fallback
+
+            String fragId = "fragment-" + result.size();
+            String svgId = "loopRect-" + result.size();
+            String label = fragmentKeyword + (fragmentCondition.isEmpty() ? "" : " " + fragmentCondition);
+
+            SequenceFragment.FragmentType fragType =
+                    SequenceFragment.FragmentType.fromKeyword(fragmentKeyword);
+            result.add(new SequenceFragment(
+                    fragId, label, rx, ry, rw, rh, svgId,
+                    fragType, fragmentCondition));
+        }
+        return result;
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  Edge extraction (flowchart, class, ER, etc.)
     // ═══════════════════════════════════════════════════════════
 
-    private static List<DiagramEdge> extractEdges(Document doc, List<DiagramNode> nodes) {
+    private static List<DiagramEdge> extractEdges(Document doc, List<DiagramNode> nodes,
+                                                     String diagramType) {
         List<DiagramEdge> result = new ArrayList<DiagramEdge>();
 
         // Build svgId → logicalId mapping for endpoint resolution
@@ -409,25 +740,129 @@ public final class DiagramLayoutExtractor {
             svgIdToLogicalId.put(n.getSvgId(), n.getId());
         }
 
-        // ── edgePath groups (flowchart, class, state) ──
-        NodeList allGs = doc.getElementsByTagNameNS("*", "g");
-        for (int i = 0; i < allGs.getLength(); i++) {
-            Node n = allGs.item(i);
-            if (!(n instanceof Element)) continue;
-            Element g = (Element) n;
-            String cls = attr(g, "class");
-            if (!cls.contains("edgePath")) continue;
-            // Skip the container "edgePaths"
-            if ("edgePaths".equals(cls)) continue;
+        // Collect edge labels from <g class="edgeLabels"> → <g class="edgeLabel">
+        // matched by data-id attribute
+        Map<String, String> edgeLabelsByDataId = collectEdgeLabels(doc);
 
-            DiagramEdge edge = extractEdgePath(g, svgIdToLogicalId);
-            if (edge != null) result.add(edge);
+        // ═══ Strategy 1: Mermaid 11+ flat paths with data-edge="true" ═══
+        // In Mermaid 11, edges are <path> elements directly inside <g class="edgePaths">
+        // with id="L_A_B_0", data-edge="true", class="... flowchart-link ..."
+        NodeList allPaths = doc.getElementsByTagNameNS("*", "path");
+        for (int i = 0; i < allPaths.getLength(); i++) {
+            Node n = allPaths.item(i);
+            if (!(n instanceof Element)) continue;
+            Element path = (Element) n;
+
+            String dataEdge = attr(path, "data-edge");
+            String cls = attr(path, "class");
+            String pathId = attr(path, "id");
+
+            // Skip ER relationship lines — they're handled by the dedicated ER section below
+            if (cls.contains("er") && cls.contains("relationshipLine")) continue;
+
+            // Match: data-edge="true" OR (class contains "flowchart-link" AND id matches L_..._...)
+            boolean isFlowchartEdge = "true".equals(dataEdge)
+                    || (cls.contains("flowchart-link") && pathId.startsWith("L"));
+
+            if (!isFlowchartEdge) continue;
+
+            // Use data-id if available, otherwise fall back to id
+            String edgeDataId = attr(path, "data-id");
+            if (edgeDataId.isEmpty()) edgeDataId = pathId;
+
+            // Parse source/target from the edge id
+            String sourceId = "";
+            String targetId = "";
+            Matcher edgeMatcher = EDGE_PATH_ID.matcher(edgeDataId);
+            if (edgeMatcher.matches()) {
+                String rawSource = edgeMatcher.group(1);
+                String rawTarget = edgeMatcher.group(2);
+                sourceId = resolveNodeId(rawSource, svgIdToLogicalId);
+                targetId = resolveNodeId(rawTarget, svgIdToLogicalId);
+            } else {
+                // Try class diagram pattern: id_Source_Target_N
+                Matcher classEdgeMatcher = CLASS_EDGE_ID.matcher(edgeDataId);
+                if (classEdgeMatcher.matches()) {
+                    String combined = classEdgeMatcher.group(1); // e.g. "Kunde_Bestellung"
+                    String[] resolved = resolveClassEdgeEndpoints(combined, svgIdToLogicalId);
+                    if (resolved != null) {
+                        sourceId = resolved[0];
+                        targetId = resolved[1];
+                    }
+                }
+            }
+
+            // Parse path geometry
+            String d = path.getAttribute("d");
+            double[] pathBounds = (d != null && !d.isEmpty()) ? parsePathBounds(d) : null;
+
+            // Apply parent transforms
+            if (pathBounds != null) {
+                double[] parentOffset = resolveParentTranslates(path);
+                pathBounds[0] += parentOffset[0];
+                pathBounds[1] += parentOffset[1];
+                pathBounds[2] += parentOffset[0];
+                pathBounds[3] += parentOffset[1];
+            }
+            if (pathBounds == null) pathBounds = new double[]{0, 0, 0, 0};
+
+            // Look up label from edgeLabels
+            String label = edgeLabelsByDataId.containsKey(edgeDataId)
+                    ? edgeLabelsByDataId.get(edgeDataId)
+                    : "";
+
+            String edgeId = sourceId.isEmpty() ? edgeDataId : (sourceId + "->" + targetId);
+
+            // Detect line style from SVG style/class attributes
+            LineStyle lineStyle = detectLineStyle(path);
+            ArrowHead headType = detectArrowHead(path, "marker-end");
+            ArrowHead tailType = detectArrowHead(path, "marker-start");
+
+            // Create typed edge based on diagram context
+            if ("classDiagram".equals(diagramType)) {
+                RelationType relType = inferRelationType(lineStyle, headType, tailType);
+                result.add(new ClassRelation(
+                        edgeId, sourceId, targetId,
+                        label, d,
+                        pathBounds[0], pathBounds[1],
+                        pathBounds[2] - pathBounds[0],
+                        pathBounds[3] - pathBounds[1],
+                        relType, "", ""
+                ));
+            } else {
+                result.add(new FlowchartEdge(
+                        edgeId, sourceId, targetId,
+                        label, d,
+                        pathBounds[0], pathBounds[1],
+                        pathBounds[2] - pathBounds[0],
+                        pathBounds[3] - pathBounds[1],
+                        lineStyle, headType, tailType
+                ));
+            }
         }
 
-        // ── ER relationship lines ──
-        NodeList paths = doc.getElementsByTagNameNS("*", "path");
-        for (int i = 0; i < paths.getLength(); i++) {
-            Node n = paths.item(i);
+        // ═══ Strategy 2: Legacy <g class="edgePath"> groups ═══
+        // Only if Strategy 1 found nothing (older Mermaid versions)
+        if (result.isEmpty()) {
+            NodeList allGs = doc.getElementsByTagNameNS("*", "g");
+            for (int i = 0; i < allGs.getLength(); i++) {
+                Node n = allGs.item(i);
+                if (!(n instanceof Element)) continue;
+                Element g = (Element) n;
+                String cls = attr(g, "class");
+                if (!cls.contains("edgePath")) continue;
+                // Skip the container "edgePaths"
+                if ("edgePaths".equals(cls.trim())) continue;
+
+                DiagramEdge edge = extractEdgePathGroup(g, svgIdToLogicalId, edgeLabelsByDataId);
+                if (edge != null) result.add(edge);
+            }
+        }
+
+        // ═══ ER relationship lines ═══
+        int erRelIdx = 0;
+        for (int i = 0; i < allPaths.getLength(); i++) {
+            Node n = allPaths.item(i);
             if (!(n instanceof Element)) continue;
             Element path = (Element) n;
             String cls = attr(path, "class");
@@ -437,18 +872,189 @@ public final class DiagramLayoutExtractor {
             double[] bounds = (d != null && !d.isEmpty()) ? parsePathBounds(d) : null;
             if (bounds == null) bounds = new double[]{0, 0, 0, 0};
 
-            result.add(new DiagramEdge(
-                    "er-relation-" + i, "", "", "",
-                    "er-link", d,
+            // Use actual path start/end points for proximity matching
+            // (bounding box midpoints fail for vertical or diagonal lines)
+            double[] endpoints = (d != null && !d.isEmpty()) ? parsePathEndpoints(d) : null;
+            double startX, startY, endX, endY;
+            if (endpoints != null) {
+                startX = endpoints[0]; startY = endpoints[1];
+                endX = endpoints[2]; endY = endpoints[3];
+            } else {
+                startX = bounds[0]; startY = bounds[1];
+                endX = bounds[2]; endY = bounds[3];
+            }
+            String srcId = "", tgtId = "";
+            double srcDist = Double.MAX_VALUE, tgtDist = Double.MAX_VALUE;
+            for (DiagramNode node : nodes) {
+                if (!"entity".equals(node.getKind())) continue;
+                double ncx = node.getCenterX(), ncy = node.getCenterY();
+                double dStart = Math.hypot(ncx - startX, ncy - startY);
+                double dEnd = Math.hypot(ncx - endX, ncy - endY);
+                if (dStart < srcDist) { srcDist = dStart; srcId = node.getId(); }
+                if (dEnd < tgtDist) { tgtDist = dEnd; tgtId = node.getId(); }
+            }
+            // Guard: source and target must be different entities
+            if (srcId.equals(tgtId) && !srcId.isEmpty()) {
+                // Fallback: assign the second-closest entity as target
+                double secondBest = Double.MAX_VALUE;
+                for (DiagramNode node : nodes) {
+                    if (!"entity".equals(node.getKind())) continue;
+                    if (node.getId().equals(srcId)) continue;
+                    double ncx = node.getCenterX(), ncy = node.getCenterY();
+                    double dEnd2 = Math.hypot(ncx - endX, ncy - endY);
+                    if (dEnd2 < secondBest) { secondBest = dEnd2; tgtId = node.getId(); }
+                }
+            }
+
+            // Try to detect cardinality from marker references
+            ErCardinality srcCard = detectErCardinality(path, "marker-start");
+            ErCardinality tgtCard = detectErCardinality(path, "marker-end");
+            // Mermaid ER: "--" = identifying (solid), ".." = non-identifying (dashed)
+            boolean identifying = cls.contains("identify");
+
+            // Try to find the relationship label from nearby text elements
+            String erLabel = "";
+            double midX = (bounds[0] + bounds[2]) / 2;
+            double midY = (bounds[1] + bounds[3]) / 2;
+
+            // Strategy 1: text in parent group
+            Node parent = path.getParentNode();
+            if (parent instanceof Element) {
+                NodeList texts = ((Element) parent).getElementsByTagNameNS("*", "text");
+                for (int t = 0; t < texts.getLength(); t++) {
+                    String txt = texts.item(t).getTextContent();
+                    if (txt != null && !txt.trim().isEmpty()) {
+                        erLabel = txt.trim();
+                        break;
+                    }
+                }
+            }
+
+            // Strategy 2: search all text elements with class "er relationshipLabel"
+            if (erLabel.isEmpty()) {
+                NodeList allTexts = doc.getElementsByTagNameNS("*", "text");
+                double bestLabelDist = Double.MAX_VALUE;
+                for (int t = 0; t < allTexts.getLength(); t++) {
+                    Node textNode = allTexts.item(t);
+                    if (!(textNode instanceof Element)) continue;
+                    Element textEl = (Element) textNode;
+                    String textCls = attr(textEl, "class");
+                    if (!textCls.contains("er") || !textCls.contains("Label")) continue;
+                    String txt = textEl.getTextContent();
+                    if (txt == null || txt.trim().isEmpty()) continue;
+                    // Use position to match label to the closest relationship line
+                    double tx = parseDoubleAttr(textEl, "x", 0);
+                    double ty = parseDoubleAttr(textEl, "y", 0);
+                    // Also check transform
+                    if (tx == 0 && ty == 0) {
+                        double[] trans = parseTranslate(textEl);
+                        tx = trans[0]; ty = trans[1];
+                    }
+                    double dist = Math.hypot(tx - midX, ty - midY);
+                    if (dist < bestLabelDist) {
+                        bestLabelDist = dist;
+                        erLabel = txt.trim();
+                    }
+                }
+            }
+
+            result.add(new ErRelationship(
+                    srcId.isEmpty() ? "er-relation-" + erRelIdx : srcId + "->" + tgtId,
+                    srcId, tgtId, erLabel,
+                    d,
                     bounds[0], bounds[1],
-                    bounds[2] - bounds[0], bounds[3] - bounds[1]
+                    bounds[2] - bounds[0], bounds[3] - bounds[1],
+                    srcCard, tgtCard, identifying
             ));
+            erRelIdx++;
+        }
+
+        // ═══ State diagram transitions: resolve empty endpoints by proximity ═══
+        if ("stateDiagram".equals(diagramType)) {
+            List<DiagramEdge> resolved = new ArrayList<DiagramEdge>();
+            for (DiagramEdge edge : result) {
+                if (!edge.getSourceId().isEmpty() && !edge.getTargetId().isEmpty()) {
+                    // Already has endpoints — convert to StateTransition if needed
+                    if (!(edge instanceof StateTransition)) {
+                        resolved.add(new StateTransition(
+                                edge.getId(), edge.getSourceId(), edge.getTargetId(),
+                                edge.getLabel(), edge.getPathData(),
+                                edge.getX(), edge.getY(), edge.getWidth(), edge.getHeight(),
+                                edge.getLabel()));
+                    } else {
+                        resolved.add(edge);
+                    }
+                    continue;
+                }
+
+                // Resolve source/target by proximity to state nodes
+                double[] pathBounds = (edge.getPathData() != null && !edge.getPathData().isEmpty())
+                        ? parsePathBounds(edge.getPathData()) : null;
+                if (pathBounds == null) {
+                    pathBounds = new double[]{edge.getX(), edge.getY(),
+                            edge.getX() + edge.getWidth(), edge.getY() + edge.getHeight()};
+                }
+
+                double startX = pathBounds[0], startY = pathBounds[1];
+                double endX = pathBounds[2], endY = pathBounds[3];
+                String srcId = "", tgtId = "";
+                double srcDist = Double.MAX_VALUE, tgtDist = Double.MAX_VALUE;
+                for (DiagramNode node : nodes) {
+                    if (!"state".equals(node.getKind())) continue;
+                    double ncx = node.getCenterX(), ncy = node.getCenterY();
+                    double dStart = Math.hypot(ncx - startX, ncy - startY);
+                    double dEnd = Math.hypot(ncx - endX, ncy - endY);
+                    if (dStart < srcDist) { srcDist = dStart; srcId = node.getId(); }
+                    if (dEnd < tgtDist) { tgtDist = dEnd; tgtId = node.getId(); }
+                }
+
+                String edgeId = srcId.isEmpty() ? edge.getId() : (srcId + "->" + tgtId);
+                String label = edge.getLabel();
+                resolved.add(new StateTransition(
+                        edgeId, srcId, tgtId, label,
+                        edge.getPathData(),
+                        edge.getX(), edge.getY(), edge.getWidth(), edge.getHeight(),
+                        label));
+            }
+            result = resolved;
         }
 
         return result;
     }
 
-    private static DiagramEdge extractEdgePath(Element g, Map<String, String> svgIdToLogicalId) {
+    /**
+     * Collect edge labels from {@code <g class="edgeLabels">} groups.
+     * Returns a map from data-id → label text.
+     */
+    private static Map<String, String> collectEdgeLabels(Document doc) {
+        Map<String, String> labels = new LinkedHashMap<String, String>();
+        NodeList allGs = doc.getElementsByTagNameNS("*", "g");
+        for (int i = 0; i < allGs.getLength(); i++) {
+            Node n = allGs.item(i);
+            if (!(n instanceof Element)) continue;
+            Element g = (Element) n;
+            String cls = attr(g, "class");
+            if (!"edgeLabel".equals(cls.trim()) && !cls.startsWith("edgeLabel ")) continue;
+
+            // Look for a child <g class="label" data-id="...">
+            NodeList children = g.getElementsByTagNameNS("*", "g");
+            for (int j = 0; j < children.getLength(); j++) {
+                Element child = (Element) children.item(j);
+                String dataId = attr(child, "data-id");
+                if (!dataId.isEmpty()) {
+                    String text = extractTextContent(child);
+                    if (!text.isEmpty()) {
+                        labels.put(dataId, text);
+                    }
+                }
+            }
+        }
+        return labels;
+    }
+
+    private static DiagramEdge extractEdgePathGroup(Element g,
+                                                     Map<String, String> svgIdToLogicalId,
+                                                     Map<String, String> edgeLabelsByDataId) {
         String svgId = attr(g, "id");
 
         // Try to extract source/target from the edge id: L-Source-Target-0
@@ -477,8 +1083,11 @@ public final class DiagramLayoutExtractor {
             }
         }
 
-        // Find edge label from sibling edgeLabel group (same index)
+        // Find edge label from sibling edgeLabel group or inline text
         String label = extractEdgeLabel(g);
+        if ((label == null || label.isEmpty()) && edgeLabelsByDataId.containsKey(svgId)) {
+            label = edgeLabelsByDataId.get(svgId);
+        }
 
         // Apply parent transforms to the path bounds
         if (pathBounds != null) {
@@ -507,6 +1116,39 @@ public final class DiagramLayoutExtractor {
                 pathBounds[2] - pathBounds[0],
                 pathBounds[3] - pathBounds[1]
         );
+    }
+
+    /**
+     * Resolve class diagram edge endpoints from a combined string like
+     * {@code "Kunde_Bestellung"}.  Tries all underscore split positions and
+     * checks whether both halves are known node IDs.
+     *
+     * @param combined  the combined source/target string (e.g. {@code "Kunde_Bestellung"})
+     * @param svgIdToLogicalId  map from SVG id → logical node id
+     * @return {@code [sourceId, targetId]} or {@code null} if unresolvable
+     */
+    private static String[] resolveClassEdgeEndpoints(String combined,
+                                                       Map<String, String> svgIdToLogicalId) {
+        // Collect all known logical node IDs
+        java.util.Set<String> knownIds = new java.util.HashSet<String>(svgIdToLogicalId.values());
+
+        // Try all underscore split positions
+        for (int i = 1; i < combined.length(); i++) {
+            if (combined.charAt(i) == '_') {
+                String left = combined.substring(0, i);
+                String right = combined.substring(i + 1);
+                if (knownIds.contains(left) && knownIds.contains(right)) {
+                    return new String[]{left, right};
+                }
+            }
+        }
+
+        // Fallback: simple split at first underscore
+        int sep = combined.indexOf('_');
+        if (sep > 0 && sep < combined.length() - 1) {
+            return new String[]{combined.substring(0, sep), combined.substring(sep + 1)};
+        }
+        return null;
     }
 
     /**
@@ -690,6 +1332,277 @@ public final class DiagramLayoutExtractor {
     }
 
     // ═══════════════════════════════════════════════════════════
+    //  Edge style detection
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Infer the UML relation type from detected arrowheads and line style.
+     */
+    private static RelationType inferRelationType(LineStyle lineStyle,
+                                                   ArrowHead headType,
+                                                   ArrowHead tailType) {
+        // Triangle (open) → inheritance or realization
+        if (headType == ArrowHead.TRIANGLE_OPEN || tailType == ArrowHead.TRIANGLE_OPEN) {
+            return (lineStyle == LineStyle.DASHED || lineStyle == LineStyle.DOTTED)
+                    ? RelationType.REALIZATION : RelationType.INHERITANCE;
+        }
+        // Diamond → composition or aggregation
+        if (headType == ArrowHead.DIAMOND_FILLED || tailType == ArrowHead.DIAMOND_FILLED) {
+            return RelationType.COMPOSITION;
+        }
+        if (headType == ArrowHead.DIAMOND_OPEN || tailType == ArrowHead.DIAMOND_OPEN) {
+            return RelationType.AGGREGATION;
+        }
+        // Dashed/dotted with arrow → dependency
+        if ((lineStyle == LineStyle.DASHED || lineStyle == LineStyle.DOTTED)
+                && (headType == ArrowHead.NORMAL || tailType == ArrowHead.NORMAL)) {
+            return RelationType.DEPENDENCY;
+        }
+        // Arrow → association
+        if (headType == ArrowHead.NORMAL || tailType == ArrowHead.NORMAL) {
+            return RelationType.ASSOCIATION;
+        }
+        // No arrowhead → link
+        return RelationType.LINK;
+    }
+
+
+    /**
+     * Detect the line style of an edge from its SVG attributes.
+     * Checks {@code stroke-dasharray}, {@code stroke-width}, and CSS classes.
+     */
+    private static LineStyle detectLineStyle(Element path) {
+        // Check inline style
+        String style = attr(path, "style");
+        String cls = attr(path, "class");
+
+        // stroke-dasharray indicates dashed
+        String dashArray = extractStyleProperty(style, "stroke-dasharray");
+        if (dashArray == null || dashArray.isEmpty()) {
+            dashArray = path.getAttribute("stroke-dasharray");
+        }
+        if (dashArray != null && !dashArray.isEmpty()
+                && !"none".equalsIgnoreCase(dashArray) && !"0".equals(dashArray)) {
+            return LineStyle.DASHED;
+        }
+
+        // stroke-width > threshold indicates thick
+        String strokeWidth = extractStyleProperty(style, "stroke-width");
+        if (strokeWidth == null || strokeWidth.isEmpty()) {
+            strokeWidth = path.getAttribute("stroke-width");
+        }
+        if (strokeWidth != null && !strokeWidth.isEmpty()) {
+            try {
+                double sw = Double.parseDouble(strokeWidth.replace("px", "").trim());
+                if (sw > 2.5) return LineStyle.THICK;
+            } catch (NumberFormatException ignored) {}
+        }
+
+        // CSS class heuristics
+        if (cls.contains("dotted") || cls.contains("dashed")) return LineStyle.DASHED;
+        if (cls.contains("thick")) return LineStyle.THICK;
+
+        return LineStyle.SOLID;
+    }
+
+    /**
+     * Detect arrowhead type from a marker reference attribute.
+     *
+     * @param path      the SVG path element
+     * @param markerAttr  "marker-end" or "marker-start"
+     * @return detected arrowhead type
+     */
+    private static ArrowHead detectArrowHead(Element path, String markerAttr) {
+        // Check inline style first
+        String style = attr(path, "style");
+        String markerUrl = extractStyleProperty(style, markerAttr);
+        if (markerUrl == null || markerUrl.isEmpty()) {
+            markerUrl = path.getAttribute(markerAttr);
+        }
+        if (markerUrl == null || markerUrl.isEmpty() || "none".equals(markerUrl)) {
+            return ArrowHead.NONE;
+        }
+
+        // Parse url(#markerId) → check marker element
+        String markerId = markerUrl.replaceAll(".*#([^)\"]+).*", "$1");
+        if (markerId.isEmpty()) return ArrowHead.NORMAL;
+
+        // Heuristic: marker id often contains the type
+        String lower = markerId.toLowerCase();
+        if (lower.contains("aggregation") || lower.contains("diamond") && lower.contains("open")) {
+            return ArrowHead.DIAMOND_OPEN;
+        }
+        if (lower.contains("composition") || lower.contains("diamond")) {
+            return ArrowHead.DIAMOND_FILLED;
+        }
+        if (lower.contains("extension") || lower.contains("triangle") || lower.contains("open")) {
+            return ArrowHead.TRIANGLE_OPEN;
+        }
+        if (lower.contains("cross")) {
+            return ArrowHead.CROSS;
+        }
+        if (lower.contains("circle")) {
+            return ArrowHead.CIRCLE;
+        }
+
+        return ArrowHead.NORMAL;
+    }
+
+    /**
+     * Extract a CSS property value from an inline style string.
+     *
+     * @param style    e.g. "stroke-dasharray: 3; stroke-width: 2px"
+     * @param property e.g. "stroke-dasharray"
+     * @return the value, or null if not found
+     */
+    private static String extractStyleProperty(String style, String property) {
+        if (style == null || style.isEmpty()) return null;
+        String[] parts = style.split(";");
+        for (String part : parts) {
+            String trimmed = part.trim();
+            if (trimmed.startsWith(property)) {
+                int colon = trimmed.indexOf(':');
+                if (colon >= 0) {
+                    return trimmed.substring(colon + 1).trim();
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Detect ER cardinality from a marker reference on a relationship path.
+     *
+     * @param path       the SVG path element for the relationship line
+     * @param markerAttr "marker-start" or "marker-end"
+     * @return detected cardinality
+     */
+    private static ErCardinality detectErCardinality(Element path, String markerAttr) {
+        String style = attr(path, "style");
+        String markerUrl = extractStyleProperty(style, markerAttr);
+        if (markerUrl == null || markerUrl.isEmpty()) {
+            markerUrl = path.getAttribute(markerAttr);
+        }
+        if (markerUrl == null || markerUrl.isEmpty() || "none".equals(markerUrl)) {
+            return ErCardinality.EXACTLY_ONE;
+        }
+
+        String markerId = markerUrl.replaceAll(".*#([^)\"]+).*", "$1");
+        String lower = markerId.toLowerCase();
+
+        // Mermaid ER marker IDs typically contain cardinality hints
+        if (lower.contains("zero_or_more") || lower.contains("crowfoot") && lower.contains("zero")) {
+            return ErCardinality.ZERO_OR_MORE;
+        }
+        if (lower.contains("one_or_more") || lower.contains("crowfoot") && !lower.contains("zero")) {
+            return ErCardinality.ONE_OR_MORE;
+        }
+        if (lower.contains("zero_or_one") || lower.contains("optionality")) {
+            return ErCardinality.ZERO_OR_ONE;
+        }
+        if (lower.contains("one") || lower.contains("only_one")) {
+            return ErCardinality.EXACTLY_ONE;
+        }
+
+        return ErCardinality.EXACTLY_ONE;
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    //  SVG path endpoint parser (for ER relationship proximity matching)
+    // ═══════════════════════════════════════════════════════════
+
+    /**
+     * Parse an SVG path {@code d} attribute and return its first and last points
+     * as {@code [startX, startY, endX, endY]}, or {@code null} if parsing fails.
+     * This is more precise than using bounding box corners for proximity matching.
+     */
+    /**
+     * Parse an SVG path {@code d} attribute and return the actual start and end
+     * coordinates as {@code [startX, startY, endX, endY]}.
+     *
+     * <p>Unlike {@link #parsePathBounds}, which returns the bounding box,
+     * this returns the first {@code M} point and the final cursor position after
+     * executing all path commands.</p>
+     *
+     * @param d the SVG path {@code d} attribute
+     * @return {@code [startX, startY, endX, endY]}, or {@code null} if parsing fails
+     */
+    public static double[] parsePathEndpoints(String d) {
+        if (d == null || d.isEmpty()) return null;
+        double curX = 0, curY = 0, startX = 0, startY = 0;
+        boolean hasStart = false;
+
+        Matcher tokenizer = Pattern.compile("[MmLlHhVvCcSsQqTtAaZz][^MmLlHhVvCcSsQqTtAaZz]*")
+                .matcher(d);
+        while (tokenizer.find()) {
+            String token = tokenizer.group().trim();
+            char cmd = token.charAt(0);
+            boolean isRel = Character.isLowerCase(cmd);
+            char CMD = Character.toUpperCase(cmd);
+            Matcher numMatcher = Pattern.compile("-?[\\d]+(?:\\.[\\d]*)?(?:[eE][+-]?[\\d]+)?")
+                    .matcher(token.substring(1));
+            List<Double> vals = new ArrayList<Double>();
+            while (numMatcher.find()) vals.add(Double.parseDouble(numMatcher.group()));
+
+            switch (CMD) {
+                case 'M':
+                    for (int k = 0; k + 1 < vals.size(); k += 2) {
+                        curX = isRel ? curX + vals.get(k) : vals.get(k);
+                        curY = isRel ? curY + vals.get(k + 1) : vals.get(k + 1);
+                        if (!hasStart) { startX = curX; startY = curY; hasStart = true; }
+                    }
+                    break;
+                case 'L': case 'T':
+                    for (int k = 0; k + 1 < vals.size(); k += 2) {
+                        curX = isRel ? curX + vals.get(k) : vals.get(k);
+                        curY = isRel ? curY + vals.get(k + 1) : vals.get(k + 1);
+                        if (!hasStart) { startX = curX; startY = curY; hasStart = true; }
+                    }
+                    break;
+                case 'H':
+                    for (int k = 0; k < vals.size(); k++) {
+                        curX = isRel ? curX + vals.get(k) : vals.get(k);
+                    }
+                    break;
+                case 'V':
+                    for (int k = 0; k < vals.size(); k++) {
+                        curY = isRel ? curY + vals.get(k) : vals.get(k);
+                    }
+                    break;
+                case 'C':
+                    for (int k = 0; k + 5 < vals.size(); k += 6) {
+                        curX = isRel ? curX + vals.get(k + 4) : vals.get(k + 4);
+                        curY = isRel ? curY + vals.get(k + 5) : vals.get(k + 5);
+                    }
+                    break;
+                case 'S':
+                    for (int k = 0; k + 3 < vals.size(); k += 4) {
+                        curX = isRel ? curX + vals.get(k + 2) : vals.get(k + 2);
+                        curY = isRel ? curY + vals.get(k + 3) : vals.get(k + 3);
+                    }
+                    break;
+                case 'Q':
+                    for (int k = 0; k + 3 < vals.size(); k += 4) {
+                        curX = isRel ? curX + vals.get(k + 2) : vals.get(k + 2);
+                        curY = isRel ? curY + vals.get(k + 3) : vals.get(k + 3);
+                    }
+                    break;
+                case 'A':
+                    for (int k = 0; k + 6 < vals.size(); k += 7) {
+                        curX = isRel ? curX + vals.get(k + 5) : vals.get(k + 5);
+                        curY = isRel ? curY + vals.get(k + 6) : vals.get(k + 6);
+                    }
+                    break;
+                case 'Z':
+                    curX = startX; curY = startY;
+                    break;
+            }
+        }
+        if (!hasStart) return null;
+        return new double[]{startX, startY, curX, curY};
+    }
+
+    // ═══════════════════════════════════════════════════════════
     //  SVG path bounding box parser (same logic as MermaidSvgFixup)
     // ═══════════════════════════════════════════════════════════
 
@@ -810,3 +1723,4 @@ public final class DiagramLayoutExtractor {
         return new double[]{minX, minY, maxX, maxY};
     }
 }
+

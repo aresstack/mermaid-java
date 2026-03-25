@@ -5,7 +5,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 /**
- * Tests for {@link BatikBBoxService} — verifies that Batik's GVT tree
+ * Tests for {@link BatikBBoxService} â€” verifies that Batik's GVT tree
  * produces accurate bounding boxes for SVG fragments.
  */
 class BatikBBoxServiceTest {
@@ -37,7 +37,7 @@ class BatikBBoxServiceTest {
 
         double[] bbox = parseBBox(result);
         assertTrue(bbox[2] > 0, "width should be > 0");
-        // Height should accommodate 3 lines (at least 2.4em × 14px ≈ 34px)
+        // Height should accommodate 3 lines (at least 2.4em Ã— 14px â‰ˆ 34px)
         assertTrue(bbox[3] > 30, "height should be > 30px for 3 lines, got: " + bbox[3]);
         System.out.println("Multi-line text BBox: " + result);
     }
@@ -93,7 +93,7 @@ class BatikBBoxServiceTest {
         System.out.println("Em-units text BBox: " + result);
     }
 
-    // ── Helper ──
+    // â”€â”€ Helper â”€â”€
 
     private static double[] parseBBox(String result) {
         String[] parts = result.split(",");
@@ -105,4 +105,5 @@ class BatikBBoxServiceTest {
         };
     }
 }
+
 

@@ -12,7 +12,7 @@ class MermaidRendererTest {
 
     private final GraalJsExecutor executor = new GraalJsExecutor();
 
-    // ── GraalJS basics ──────────────────────────────────────────────────────
+    // â”€â”€ GraalJS basics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("GraalJS executes trivial JavaScript and returns result")
@@ -30,7 +30,7 @@ class MermaidRendererTest {
         assertNotNull(result.getErrorMessage());
     }
 
-    // ── Browser shim ────────────────────────────────────────────────────────
+    // â”€â”€ Browser shim â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("Browser shim loads successfully in GraalJS")
@@ -43,7 +43,7 @@ class MermaidRendererTest {
         assertEquals("ok", result.getOutput());
     }
 
-    // ── MermaidRenderer ─────────────────────────────────────────────────────
+    // â”€â”€ MermaidRenderer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("MermaidRenderer singleton is available when bundle is on classpath")
@@ -91,7 +91,7 @@ class MermaidRendererTest {
         assertTrue(svg.contains("<svg"), "Output should contain <svg> element");
     }
 
-    // ── JsExecutionResult ───────────────────────────────────────────────────
+    // â”€â”€ JsExecutionResult â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 
     @Test
@@ -101,7 +101,7 @@ class MermaidRendererTest {
         assertTrue(JsExecutionResult.failure("boom").toString().contains("FAILURE"));
     }
 
-    // ── Mermaid 11+ new diagram types ───────────────────────────────────────
+    // â”€â”€ Mermaid 11+ new diagram types â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("Renders a mindmap to SVG (Mermaid 11+ only)")
@@ -153,7 +153,7 @@ class MermaidRendererTest {
         assertTrue(svg.contains("<svg"), "Output should contain <svg> element");
     }
 
-    // ── PostProcessSvg edge-case tests ──────────────────────────────────────
+    // â”€â”€ PostProcessSvg edge-case tests â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
     @Test
     @DisplayName("postProcessSvg strips content after </svg>")
@@ -203,7 +203,7 @@ class MermaidRendererTest {
         assertNotNull(svg, "SVG should not be null");
 
 
-        // Try to parse as XML — should not throw
+        // Try to parse as XML â€” should not throw
         javax.xml.parsers.DocumentBuilderFactory dbf = javax.xml.parsers.DocumentBuilderFactory.newInstance();
         dbf.setNamespaceAware(true);
         javax.xml.parsers.DocumentBuilder db = dbf.newDocumentBuilder();
@@ -226,3 +226,4 @@ class MermaidRendererTest {
                 "alignment-baseline should not survive the full pipeline");
     }
 }
+
